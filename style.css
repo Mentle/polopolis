@@ -22,6 +22,69 @@ body {
     font-size: 14px;
 }
 
+#connection-info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #fff; /* White text */
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px; /* Or adjust as needed */
+    z-index: 101; /* Ensure it's above other elements if necessary */
+    white-space: pre-wrap; /* To respect newlines and spacing */
+    /* background-color: rgba(0, 0, 0, 0.5); */ /* Removed background */
+    padding: 5px;
+    /* border: 1px solid #0f0; */ /* Removed border */
+}
+
+/* General styles for the navigation container */
+#navigation-links {
+    position: absolute;
+    width: 100%; /* Take full width to help with centering or spacing */
+    display: flex;
+    justify-content: space-around; /* Or space-evenly, center */
+    align-items: center;
+    padding: 10px 0;
+    z-index: 100; /* Ensure it's visible */
+    font-family: 'Courier New', Courier, monospace; /* Match other text */
+}
+
+#navigation-links a {
+    color: #fff; /* White text */
+    text-decoration: none;
+    padding: 5px 10px;
+    font-size: 16px; /* Adjust as needed */
+    /* border: 1px solid white; */ /* Optional: for visual debugging */
+}
+
+/* Mobile specific styles */
+@media (max-width: 767px) { /* Same breakpoint as camera settings */
+    #navigation-links {
+        bottom: 10px; /* Position at the bottom */
+        left: 0;
+        /* For mobile, you might want them closer or stacked */
+        /* justify-content: center; */ /* Example: center items */
+    }
+    #navigation-links a {
+        font-size: 14px; /* Slightly smaller on mobile */
+        margin: 0 5px; /* Add some space between items on mobile */
+    }
+}
+
+/* Desktop specific styles (optional, can adjust later) */
+@media (min-width: 768px) {
+    #navigation-links {
+        /* For now, let's try bottom as well, can be changed */
+        bottom: 20px; 
+        left: 0;
+        /* Or perhaps top right? Example:
+        top: 20px;
+        right: 20px;
+        width: auto; // Don't take full width if top-right
+        justify-content: flex-end;
+        */
+    }
+}
+
 pre {
     white-space: pre;
     font-family: 'Courier New', Courier, monospace;

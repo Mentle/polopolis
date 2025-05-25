@@ -1,0 +1,17 @@
+# Ignore the 'ignore' folder and its contents
+ignore/
+
+# Optional: Common files to ignore
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# macOS
+.DS_Store
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
