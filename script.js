@@ -36,8 +36,8 @@ const cameraPerspectives = {
     },
     mobile: {
         coder:     { position: { x: -1.933, y: 0.773, z: 1.673 }, target: { x: 0.216, y: -0.140, z: 0.389 } },
-        about:     { position: { x: 0.456, y: 1.610, z: 1.063 }, target: { x: -0.171, y: 0.436, z: 0.059 } },
-        contact:   { position: { x: -0.720, y: 0.570, z: 0.735}, target: { x: 0.126, y: 0.657, z: 0.128 } },
+        about:     { position: { x: -0.031, y: 1.064, z: 0.431 }, target: { x: -0.025, y: 0.995, z: 0.006 } },
+        contact:   { position: { x: 0.056, y: 0.628, z: 1.119}, target: { x: 0.083, y: 0.761, z: 0.083 } },
         portfolio: { position: { x: 2.354, y: -0.486, z: 1.339 }, target: { x: 0.135, y: 0.490, z: -0.030 } }
     }
 };
@@ -71,6 +71,12 @@ let currentTextAnimationInterval = null;
 const typingSpeedMs = 50; // ms per character or line step
 const useLineTyping = true; // true for line-by-line, false for char-by-char
 let activeTypingOverlayId = null;
+
+let aboutBodyOriginalHTML = ''; // To store the original HTML of the about body text
+let currentAboutBodyAnimationInterval = null;
+let activeAboutBodyTyping = false;
+
+const typingAnimSpeed = 50; // General speed for ASCII art
 
 // Home-specific lights
 let homeFillLight, homeRimLight;
@@ -230,7 +236,7 @@ function switchModelAndAnimateCamera(newModelKeyFromLink) {
     // --- Define Target State (for the destination view) ---
     const finalPerspective = cameraPerspectives[deviceType][newModelKeyFromLink];
     if (!finalPerspective) {
-        console.error(`[switchModelAndAnimateCamera] Critical: Final perspective for ${newModelKeyFromLink} on ${deviceType} not found. Aborting animation.`);
+        console.error(`[switchModelAndAnimateCamera] Critical: Final perspective for ${newModelKeyFromLink} on ${deviceType} not found! Cannot set final state.`);
         targetOfCurrentAnimation = null;
         isAnimatingCamera = false;
         return;
@@ -458,29 +464,120 @@ function switchModelAndAnimateCamera(newModelKeyFromLink) {
         .start();
 }
 
-function animateOverlayText(overlayId, typeIn, callback) {
-    if (currentTextAnimationInterval) {
+function animateAboutBodyText(typeIn, callback) {
+    const aboutOverlay = document.getElementById('about-overlay');
+    if (!aboutOverlay) return;
+    const aboutBodyElem = aboutOverlay.querySelector('.about-body-text');
+    if (!aboutBodyElem) {
+        if (callback) callback();
+        return;
+    }
+
+    if (currentAboutBodyAnimationInterval) {
+        clearInterval(currentAboutBodyAnimationInterval);
+        currentAboutBodyAnimationInterval = null;
+    }
+    activeAboutBodyTyping = false;
+
+    if (!typeIn) {
+        aboutBodyElem.innerHTML = '';
+        aboutBodyElem.style.display = 'none';
+        if (callback) callback();
+        return;
+    }
+
+    // Type In logic
+    aboutBodyElem.innerHTML = ''; // Clear previous content
+    aboutBodyElem.style.display = 'block';
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = aboutBodyOriginalHTML;
+    const originalParagraphs = Array.from(tempDiv.querySelectorAll('p'));
+
+    let pIndex = 0;
+    let charIndex = 0;
+    const bodyTypingSpeed = 20; // ms, adjust for desired speed
+    activeAboutBodyTyping = true;
+
+    currentAboutBodyAnimationInterval = setInterval(() => {
+        if (pIndex >= originalParagraphs.length) {
+            clearInterval(currentAboutBodyAnimationInterval);
+            currentAboutBodyAnimationInterval = null;
+            activeAboutBodyTyping = false;
+            if (callback) callback();
+            return;
+        }
+
+        let targetP;
+        if (aboutBodyElem.children.length <= pIndex) {
+            targetP = document.createElement('p');
+            aboutBodyElem.appendChild(targetP);
+        } else {
+            targetP = aboutBodyElem.children[pIndex];
+        }
+
+        const sourceText = originalParagraphs[pIndex].textContent || '';
+
+        if (charIndex < sourceText.length) {
+            targetP.textContent += sourceText[charIndex];
+            charIndex++;
+        } else {
+            // Current paragraph finished, move to the next
+            pIndex++;
+            charIndex = 0;
+            // If there are more paragraphs, ensure the next one starts on a new iteration
+            // This also handles empty paragraphs correctly by skipping them quickly.
+            if (pIndex < originalParagraphs.length && (originalParagraphs[pIndex].textContent || '').length === 0) {
+                 // If next paragraph is empty, create it and move on
+                if (aboutBodyElem.children.length <= pIndex) {
+                    aboutBodyElem.appendChild(document.createElement('p'));
+                }
+                pIndex++; // Skip to the one after empty one
+            }
+        }
+    }, bodyTypingSpeed);
+}
+
+function animateOverlayText(overlayId, typeIn, callback, charMode = false) {
+    const overlayElement = document.getElementById(overlayId);
+    if (!overlayElement) {
+        console.warn(`[animateOverlayText] Overlay element with ID '${overlayId}' not found.`);
+        if (callback) callback();
+        return;
+    }
+
+    if (currentTextAnimationInterval) { // If an animation is already running for ASCII/subheader
         clearInterval(currentTextAnimationInterval);
         currentTextAnimationInterval = null;
     }
-
-    const overlayElement = document.getElementById(overlayId);
-    if (!overlayElement) {
-        console.error(`Overlay element not found: ${overlayId}`);
-        if (callback) callback();
-        return;
+    // If switching, ensure previous about body animation is stopped if it was for 'about'
+    if (activeTypingOverlayId === 'about-overlay' && activeAboutBodyTyping) {
+        animateAboutBodyText(false); // Stop and clear about body text
     }
+
     const preElement = overlayElement.querySelector('pre');
-    if (!preElement) {
-        console.error(`PRE element not found in: ${overlayId}`);
-        if (callback) callback();
-        return;
+    const subheaderElement = overlayElement.querySelector('.subheader-text');
+    const calendlyContainer = overlayId === 'contact-overlay' ? overlayElement.querySelector('.calendly-widget-container') : null;
+    // const aboutBodyText = overlayId === 'about-overlay' ? overlayElement.querySelector('.about-body-text') : null;
+    // About body text is handled by animateAboutBodyText, called separately.
+
+    // If typing out 'about-overlay', also ensure its body text is cleared/hidden immediately.
+    if (overlayId === 'about-overlay' && !typeIn) {
+        animateAboutBodyText(false); 
     }
 
     const fullText = overlayOriginalTexts[overlayId] || '';
     let currentText = typeIn ? '' : fullText;
+
     preElement.textContent = currentText;
     overlayElement.style.display = 'block'; // Make sure overlay container is visible for animation
+
+    if (!typeIn && subheaderElement) {
+        subheaderElement.style.display = 'none'; // Hide subheader immediately when typing out
+    }
+    if (!typeIn && calendlyContainer) {
+        calendlyContainer.style.display = 'none'; // Hide Calendly immediately when typing out contact
+    }
 
     activeTypingOverlayId = overlayId; // Mark this overlay as the one being animated
 
@@ -498,6 +595,8 @@ function animateOverlayText(overlayId, typeIn, callback) {
                     clearInterval(currentTextAnimationInterval);
                     currentTextAnimationInterval = null;
                     activeTypingOverlayId = null; // Animation complete
+                    if (subheaderElement) subheaderElement.style.display = 'block'; // Show subheader
+                    if (calendlyContainer) calendlyContainer.style.display = 'block'; // Show Calendly for contact
                     if (callback) callback();
                 }
             } else { // Typing out
@@ -509,6 +608,7 @@ function animateOverlayText(overlayId, typeIn, callback) {
                     clearInterval(currentTextAnimationInterval);
                     currentTextAnimationInterval = null;
                     overlayElement.style.display = 'none'; // Hide after typing out
+                    // Subheader, Calendly, About body text are already hidden at the start of type-out
                     activeTypingOverlayId = null; // Animation complete
                     if (callback) callback();
                 }
@@ -527,6 +627,8 @@ function animateOverlayText(overlayId, typeIn, callback) {
                     clearInterval(currentTextAnimationInterval);
                     currentTextAnimationInterval = null;
                     activeTypingOverlayId = null; // Animation complete
+                    if (subheaderElement) subheaderElement.style.display = 'block'; // Show subheader
+                    if (calendlyContainer) calendlyContainer.style.display = 'block'; // Show Calendly for contact
                     if (callback) callback();
                 }
             } else { // Typing out
@@ -538,11 +640,16 @@ function animateOverlayText(overlayId, typeIn, callback) {
                     clearInterval(currentTextAnimationInterval);
                     currentTextAnimationInterval = null;
                     overlayElement.style.display = 'none'; // Hide after typing out
+                    // Subheader, Calendly, About body text are already hidden at the start of type-out
                     activeTypingOverlayId = null; // Animation complete
                     if (callback) callback();
                 }
             }
         }, typingSpeedMs);
+    }
+
+    if (overlayId === 'about-overlay' && typeIn) {
+        animateAboutBodyText(true, callback); // Chain to body text animation
     }
 }
 
@@ -566,11 +673,33 @@ function updateActiveOverlay(newModelKey) {
     if (currentTextAnimationInterval) {
         clearInterval(currentTextAnimationInterval);
         currentTextAnimationInterval = null;
-        // If an overlay was being animated out, ensure it's hidden
-        if (previousOverlayId && document.getElementById(previousOverlayId)) {
-            const prevOverlayElem = document.getElementById(previousOverlayId);
+        // If an animation was active on 'about', also stop its body text animation
+        if (activeTypingOverlayId === 'about-overlay' && activeAboutBodyTyping) {
+            animateAboutBodyText(false); // Stop and clear about body text
+        }
+    }
+    activeTypingOverlayId = null;
+
+    // Hide the previous overlay and its components fully
+    if (previousOverlayId) {
+        const prevOverlayElem = document.getElementById(previousOverlayId);
+        if (prevOverlayElem) {
             const prevPreElement = prevOverlayElem.querySelector('pre');
-            if(prevPreElement) prevPreElement.textContent = ''; // Clear its text
+            const prevSubheaderElement = prevOverlayElem.querySelector('.subheader-text');
+            const prevCalendlyContainer = prevOverlayElem.id === 'contact-overlay' ? prevOverlayElem.querySelector('.calendly-widget-container') : null;
+            // const prevAboutBodyText = prevOverlayElem.id === 'about-overlay' ? prevOverlayElem.querySelector('.about-body-text') : null;
+            
+            if(prevPreElement) prevPreElement.textContent = '';
+            if(prevSubheaderElement) prevSubheaderElement.style.display = 'none';
+            if(prevCalendlyContainer) prevCalendlyContainer.style.display = 'none';
+            // If previous was 'about', ensure its body text is cleared by animateAboutBodyText(false) or direct manipulation
+            if (prevOverlayElem.id === 'about-overlay') {
+                const aboutBodyToHide = prevOverlayElem.querySelector('.about-body-text');
+                if (aboutBodyToHide) {
+                    aboutBodyToHide.innerHTML = '';
+                    aboutBodyToHide.style.display = 'none';
+                }
+            }
             prevOverlayElem.style.display = 'none';
         }
     }
@@ -580,7 +709,22 @@ function updateActiveOverlay(newModelKey) {
         animateOverlayText(previousOverlayId, false, () => {
             // Ensure the previous one is fully hidden if not handled by animation
             const prevElem = document.getElementById(previousOverlayId);
-            if (prevElem) prevElem.style.display = 'none'; 
+            if (prevElem) {
+                prevElem.style.display = 'none'; 
+                const prevSubheader = prevElem.querySelector('.subheader-text');
+                if (prevSubheader) prevSubheader.style.display = 'none';
+                if (prevElem.id === 'contact-overlay') {
+                    const prevCalendly = prevElem.querySelector('.calendly-widget-container');
+                    if (prevCalendly) prevCalendly.style.display = 'none';
+                }
+                if (prevElem.id === 'about-overlay') {
+                    const prevAboutBody = prevElem.querySelector('.about-body-text');
+                    if (prevAboutBody) {
+                        prevAboutBody.innerHTML = '';
+                        prevAboutBody.style.display = 'none';
+                    }
+                }
+            }
             
             const newOverlayElement = document.getElementById(newOverlayId);
             if (newOverlayElement) {
@@ -741,6 +885,23 @@ function init() {
             } else {
                 overlayOriginalTexts[overlay.id] = ''; // No pre tag, store empty
             }
+
+            const aboutBodyElement = overlay.id === 'about-overlay' ? overlay.querySelector('.about-body-text') : null;
+            if (aboutBodyElement) {
+                aboutBodyOriginalHTML = aboutBodyElement.innerHTML; // Store original HTML
+                aboutBodyElement.innerHTML = ''; // Clear for animation
+                aboutBodyElement.style.display = 'none'; // Hide initially
+            }
+
+            const subheaderElement = overlay.querySelector('.subheader-text');
+            if (subheaderElement) {
+                subheaderElement.style.display = 'none'; // Hide subheader initially
+            }
+            const calendlyContainer = overlay.id === 'contact-overlay' ? overlay.querySelector('.calendly-widget-container') : null;
+            if (calendlyContainer) {
+                calendlyContainer.style.display = 'none'; // Hide Calendly initially
+            }
+
             overlay.style.display = 'none'; // Initially hide all overlay containers
         }
     });

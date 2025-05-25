@@ -117,11 +117,11 @@ body {
 
 #contact-overlay {
     top: 20px;
-    right: 20px;
-    left: unset; /* More forceful reset than 'auto' */
+    right: 5vw; /* Position from the right */
+    left: auto; /* Reset left positioning */
     transform: none; /* Try with !important to override conflicting transforms */
     width: fit-content; /* Adjust width to content */
-    max-width: 45%; /* Prevent it from becoming too wide */
+    max-width: 45vw; /* Prevent it from becoming too wide and pushing calendly out */
     text-align: right; /* Align the pre block to the right within this div */
     margin-left: auto; /* Push the overlay to the right */
 }
@@ -147,6 +147,84 @@ body {
     text-align: left; /* Align ASCII art to the left within its pre block */
 }
 
+.subheader-text {
+    display: none; /* Hidden by default, JS will manage visibility */
+    /* text-align: center; */ /* Removed global center alignment */
+    margin-top: 15px; /* Space between ASCII and subheader */
+}
+
+.subheader-text p {
+    font-family: 'Courier New', Courier, monospace; /* Match ASCII font */
+    font-size: 18px; /* Desktop font size for subheader */
+    color: #fff;
+    line-height: 1.5;
+    margin: 0; /* Remove default paragraph margin */
+    padding: 0 10px; /* Add some horizontal padding if text is long */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.calendly-widget-container {
+    display: none; /* Hidden by default, JS will manage visibility */
+    margin-top: 20px; /* Optional: Add some space above the Calendly widget */
+    max-width: 100%; /* Ensure it doesn't overflow its parent horizontally */
+    text-align: center; /* Center the buttons container by default */
+}
+
+.contact-buttons a {
+    display: inline-block;
+    padding: 10px 15px;
+    margin: 10px 5px 0;
+    color: #fff;
+    background-color: transparent;
+    border: 2px solid #fff;
+    text-decoration: none;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 16px;
+    text-align: center;
+    transition: background-color 0.3s, color 0.3s;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.contact-buttons a:hover,
+.contact-buttons a:focus {
+    background-color: #fff;
+    color: #00004d;
+    outline: none;
+}
+
+/* Styles for the About section body text */
+.about-body-text {
+    display: none; /* Hidden by default, JS will manage visibility */
+    margin-top: 20px; /* Space below the subheader */
+    color: #fff; /* White text, adjust if needed */
+    font-family: 'Courier New', Courier, monospace; /* Consistent font */
+    font-size: 16px; /* Adjust as needed */
+    line-height: 1.6;
+    max-width: 600px; /* Keep lines from getting too long */
+    margin-left: auto; /* Center the block if parent is wider */
+    margin-right: auto; /* Center the block if parent is wider */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    text-align: left; /* Align text to the left within this block */
+    padding-top: 1vw;
+}
+
+.about-body-text p {
+    margin-bottom: 1em; /* Space between paragraphs */
+}
+
+/* Desktop specific alignments for subheaders */
+#coder-overlay .subheader-text,
+#about-overlay .subheader-text,
+#contact-overlay .subheader-text,
+#portfolio-overlay .subheader-text {
+    text-align: center;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    transform: none; /* Reset transform if any was applied for desktop */
+}
+
 @media (max-width: 767px) {
     .text-overlay-content pre {
         font-size: 1vw; /* Smaller font size for mobile */
@@ -155,20 +233,71 @@ body {
         overflow-x: hidden; /* Clip content if it's still too wide for the pre block */
     }
 
+    .subheader-text {
+        text-align: center; /* Ensure subheaders are centered on mobile */
+    }
+
+    .subheader-text p {
+        font-size: 14px; /* Mobile font size for subheader */
+        line-height: 1.4;
+    }
+
     /* Mobile positioning for all overlays */
     #coder-overlay, /* Renamed from #home-overlay */
     #about-overlay,
-    #contact-overlay,
+    #contact-overlay, /* Ensure contact overlay is also handled here for mobile */
     #portfolio-overlay {
-        top: 10px;
-        left: 50%; /* Center horizontally */
-        right: auto; /* Reset desktop 'right' property */
-        transform: translateX(-50%); /* Adjust for centering */
-        width: calc(100% - 20px); /* Force container to take full available width */
-        max-width: calc(100% - 20px); /* Max width with padding (can be redundant if width is set like this) */
-        margin-left: 0; /* Reset desktop 'margin-left' */
-        text-align: center; /* Center the <pre> block within this container */
+        position: absolute;
+        width: calc(100% - 20px); /* Take up full width minus some padding */
+        max-width: calc(100% - 20px); /* Ensure it doesn't exceed viewport */
+        top: 20px; /* Position from the top */
+        left: 50%;
+        transform: translateX(-50%); /* Center horizontally only */
+        text-align: center; /* Center the <pre> block AND .subheader-text AND .contact-buttons within this container */
+        /* Remove desktop-specific positioning */
+        right: auto;
+        margin-left: 0; 
+        /* Add max-height and overflow for mobile overlays */
+        max-height: calc(100vh - 40px); /* e.g. viewport height minus top 20px and bottom 20px */
+        overflow-y: auto; /* Allow scrolling within the overlay if content is too tall */
     }
+
+    #about-overlay .text-overlay-content { /* Target the content wrapper inside #about-overlay */
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Vertically center the children as a group */
+        height: 100%; /* Ensure it takes full height of #about-overlay for centering to work */
+    }
+
+    #about-overlay .about-body-text {
+        padding-top: 2vw;
+        width: 100%; /* Take up left 40% of parent's width */
+        max-width: 100%; /* Reinforce width constraint */
+        margin-left: 0; /* Align to the left */
+        margin-right: auto; /* Allow it to not take more than 40% */
+        font-size: 3.5vw; /* Responsive font size based on viewport width */
+        padding-left: 15px; /* Add left padding */
+        padding-right: 15px; /* Add right padding */
+        box-sizing: border-box; /* Ensure padding is included within the width */
+        /* text-align: left; is already set globally for .about-body-text */
+    }
+
+    /* Ensure subheader text within specific overlays is centered on mobile */
+    #coder-overlay .subheader-text,
+    #about-overlay .subheader-text,
+    #contact-overlay .subheader-text,
+    #portfolio-overlay .subheader-text {
+        text-align: center;
+        left: 0;
+        right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        transform: none; /* Reset transform if any was applied for desktop */
+    }
+
+    /* Contact buttons on mobile are already handled by .contact-buttons text-align: center 
+       and the parent #contact-overlay having text-align: center. */
+
 }
 
 pre {
