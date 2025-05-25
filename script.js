@@ -39,7 +39,7 @@ const cameraPerspectives = {
 const asciiCharacters = ' .:-=+*#%@░';
 const asciiResolution = 0.25;
 const asciiScale = 1;
-const modelRotationSpeed = 0.002; // Will be handled by animation or OrbitControls
+const modelRotationSpeed = 0.004; // Will be handled by animation or OrbitControls
 // ---------------------
 
 let camera, scene, renderer, effect, controls;
@@ -47,6 +47,9 @@ let model, mixer, clock;
 let loader, dracoLoader; // Make loaders global
 let computerModel = null; // To store the computer model
 const computerModelPath = './computer.glb'; // Path to the computer model
+
+// Home-specific lights
+let homeFillLight, homeRimLight;
 
 // Global store for animation clips from loaded models
 
@@ -147,6 +150,8 @@ function loadNewModel(modelKeyToLoad, onLoadedCallback) {
         console.log(`[loadNewModel] About to set currentModelKey from '${currentModelKey}' to '${modelKeyToLoad}'`);
         currentModelKey = modelKeyToLoad;
         console.log(`[loadNewModel] currentModelKey is NOW: ${currentModelKey}`);
+
+        updateHomeSpecificLighting(currentModelKey === 'coder');
 
         // Manage computerModel visibility based on the newly set currentModelKey
         if (computerModel) {
@@ -263,17 +268,34 @@ function switchModelAndAnimateCamera(newModelKeyFromLink) {
         return;
     }
 
-    // Initial state
-    const startPos = camera.position.clone();
-    const startTarget = controls.target.clone();
-    const startVec = startPos.clone().sub(startTarget);
-    const startRadius = startVec.length();
-    // Clamp for Math.acos, and handle radius === 0
-    const startYOverR = startRadius > 0.001 ? Math.max(-1, Math.min(1, startVec.y / startRadius)) : 1; 
-    const startPhi = Math.acos(startYOverR); // Polar angle from +Y
-    const initialThetaForSpin = startRadius > 0.001 ? Math.atan2(startVec.x, startVec.z) : 0;
+    // Actual current camera state for smooth departure of position/radius/phi
+    const actualStartPos = camera.position.clone();
+    const actualStartTarget = controls.target.clone();
+    const actualStartVec = actualStartPos.clone().sub(actualStartTarget);
+    const actualStartRadius = actualStartVec.length();
+    const actualStartYOverR = actualStartRadius > 0.001 ? Math.max(-1, Math.min(1, actualStartVec.y / actualStartRadius)) : 1;
+    const actualStartPhi = Math.acos(actualStartYOverR);
 
-    // Target state (from cameraPerspectives)
+    // Determine start parameters for initialThetaForSpin for consistency if leaving an auto-rotating scene
+    let canonicalStartPosForThetaCalc = actualStartPos;
+    let canonicalStartTargetForThetaCalc = actualStartTarget;
+
+    // If leaving 'coder' (which auto-rotates), use its defined perspective for theta calculation
+    if (currentModelKey === 'coder') { 
+        const departingPerspective = cameraPerspectives[deviceType][currentModelKey];
+        if (departingPerspective) {
+            canonicalStartPosForThetaCalc = new THREE.Vector3(departingPerspective.position.x, departingPerspective.position.y, departingPerspective.position.z);
+            canonicalStartTargetForThetaCalc = new THREE.Vector3(departingPerspective.target.x, departingPerspective.target.y, departingPerspective.target.z);
+        } else {
+            console.warn(`[switchModelAndAnimateCamera] Departing perspective for '${currentModelKey}' not found. Using actuals for theta calc.`);
+        }
+    }
+    
+    const canonicalStartVecForTheta = canonicalStartPosForThetaCalc.clone().sub(canonicalStartTargetForThetaCalc);
+    const canonicalStartRadiusForTheta = canonicalStartVecForTheta.length(); // Used for safety in atan2
+    const initialThetaForSpin = canonicalStartRadiusForTheta > 0.001 ? Math.atan2(canonicalStartVecForTheta.x, canonicalStartVecForTheta.z) : (actualStartRadius > 0.001 ? Math.atan2(actualStartVec.x, actualStartVec.z) : 0);
+
+    // Target state (from cameraPerspectives for newModelKeyFromLink)
     const endPos = new THREE.Vector3(finalPerspective.position.x, finalPerspective.position.y, finalPerspective.position.z);
     const endTarget = new THREE.Vector3(finalPerspective.target.x, finalPerspective.target.y, finalPerspective.target.z);
     const endVec = endPos.clone().sub(endTarget);
@@ -300,11 +322,14 @@ function switchModelAndAnimateCamera(newModelKeyFromLink) {
         .to({ alpha: 1, animatedTheta: targetAnimatedTheta }, duration)
         .easing(TWEEN.Easing.Quadratic.InOut)
         .onUpdate(({ alpha, animatedTheta }) => {
-            currentOrbitCenter.lerpVectors(startTarget, endTarget, alpha);
-            const currentRadius = startRadius + (endRadius - startRadius) * alpha;
-            const currentPhi = startPhi + (endPhi - startPhi) * alpha;
+            // Interpolate orbit center from actualStartTarget to endTarget
+            currentOrbitCenter.lerpVectors(actualStartTarget, endTarget, alpha);
+            // Interpolate radius from actualStartRadius to endRadius
+            const currentRadius = actualStartRadius + (endRadius - actualStartRadius) * alpha;
+            // Interpolate phi from actualStartPhi to endPhi
+            const currentPhi = actualStartPhi + (endPhi - actualStartPhi) * alpha;
 
-            // Use the animatedTheta for positioning
+            // Use the animatedTheta (which starts from the potentially canonical initialThetaForSpin) for positioning
             camera.position.x = currentOrbitCenter.x + currentRadius * Math.sin(currentPhi) * Math.sin(animatedTheta);
             camera.position.y = currentOrbitCenter.y + currentRadius * Math.cos(currentPhi);
             camera.position.z = currentOrbitCenter.z + currentRadius * Math.sin(currentPhi) * Math.cos(animatedTheta);
@@ -353,6 +378,8 @@ function switchModelAndAnimateCamera(newModelKeyFromLink) {
                     computerModel.visible = (currentModelKey === 'coder');
                     console.log(`[TWEEN onUpdate] Computer model visibility set to ${computerModel.visible} for currentModelKey ${currentModelKey}`);
                 }
+                // Update home-specific lighting based on the new currentModelKey
+                updateHomeSpecificLighting(currentModelKey === 'coder');
             }
         })
         .onComplete(() => {
@@ -403,9 +430,21 @@ function init() {
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); // Main directional light for all scenes
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
+
+    // Create Home-specific lights
+    homeFillLight = new THREE.DirectionalLight(0xffffff, 0.5); // Intensity can be adjusted
+    homeFillLight.position.set(-1, 0.75, -1); // Position for fill
+    scene.add(homeFillLight);
+
+    homeRimLight = new THREE.DirectionalLight(0xffffff, 0.4); // Intensity can be adjusted
+    homeRimLight.position.set(0.5, 1, 0.5); // Position for rim/top
+    scene.add(homeRimLight);
+
+    // Set initial visibility for Home-specific lights
+    updateHomeSpecificLighting(currentModelKey === 'coder');
 
     loader = new GLTFLoader();
     dracoLoader = new DRACOLoader();
@@ -541,4 +580,15 @@ function animate() {
 
     renderer.render(scene, camera);
     effect.render(scene, camera);
+}
+
+// Helper function to control visibility of Home-specific lights
+function updateHomeSpecificLighting(isHomeScreen) {
+    if (homeFillLight) {
+        homeFillLight.visible = isHomeScreen;
+    }
+    if (homeRimLight) {
+        homeRimLight.visible = isHomeScreen;
+    }
+    console.log(`Home specific lighting visibility: Fill=${homeFillLight?.visible}, Rim=${homeRimLight?.visible}`);
 }
