@@ -3,9 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js ASCII Art GLTF Viewer</title>
+    <title>Marco Dietrich | Polopolis</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
+    <!-- Import Map for Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/",
+            "@tweenjs/tween.js": "https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@23.1.1/dist/tween.esm.js"
+        }
+    }
+    </script>
 </head>
 <body>
     <div id="text-overlays">
@@ -109,15 +119,6 @@ $$/      $$/  $$$$$$/  $$/   $$/ $$/   $$/          $$/    $$/   $$/ $$/   $$/  
         <a href="#" id="nav-portfolio">PORTFOLIO</a>
         <a href="#" id="nav-contact">CONTACT</a>
     </div>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/",
-                "@tweenjs/tween.js": "https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@23.1.1/dist/tween.esm.js"
-            }
-        }
-    </script>
     <script type="module" src="script.js"></script>
 </body>
 </html>
