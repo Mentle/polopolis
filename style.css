@@ -22,20 +22,6 @@ body {
     font-size: 14px;
 }
 
-#connection-info {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    color: #fff; /* White text */
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px; /* Or adjust as needed */
-    z-index: 101; /* Ensure it's above other elements if necessary */
-    white-space: pre-wrap; /* To respect newlines and spacing */
-    /* background-color: rgba(0, 0, 0, 0.5); */ /* Removed background */
-    padding: 5px;
-    /* border: 1px solid #0f0; */ /* Removed border */
-}
-
 /* General styles for the navigation container */
 #navigation-links {
     position: absolute;
@@ -82,6 +68,106 @@ body {
         width: auto; // Don't take full width if top-right
         justify-content: flex-end;
         */
+    }
+}
+
+#text-overlays {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* display: flex; */ /* Removed flex for direct absolute positioning of children */
+    /* justify-content: center; */ /* Removed */
+    /* align-items: center; */ /* Removed */
+    pointer-events: none; /* Allows clicks to pass through to the canvas unless an overlay child has pointer-events: auto */
+    z-index: 10; /* Ensure overlays are on top */
+}
+
+.text-overlay-content {
+    position: absolute; /* Each overlay is positioned absolutely within #text-overlays */
+    pointer-events: auto; 
+    color: #fff;
+    background-color: transparent;
+    padding: 15px; /* Adjusted padding slightly, can be fine-tuned */
+    border-radius: 5px;
+    /* max-width: 90%; */ /* Removed, size will be content-based or ID-specific */
+    /* max-height: 90%; */ /* Removed */
+    overflow: auto; 
+    /* text-align: center; */ /* Removed, pre tag handles its own alignment */
+}
+
+/* Desktop specific positioning */
+/* Ensure these are not overridden by mobile styles for larger screens */
+#coder-overlay { /* Renamed from #home-overlay */
+    top: 20px;
+    left: 20px;
+    right: auto; /* Explicitly set right to auto */
+    transform: none; /* Explicitly remove transform */
+    text-align: left;
+}
+
+#about-overlay {
+    top: 20px;
+    left: 20px;
+    right: auto; /* Explicitly set right to auto */
+    transform: none; /* Explicitly remove transform */
+    text-align: left;
+}
+
+#contact-overlay {
+    top: 20px;
+    right: 20px;
+    left: unset; /* More forceful reset than 'auto' */
+    transform: none; /* Try with !important to override conflicting transforms */
+    width: fit-content; /* Adjust width to content */
+    max-width: 45%; /* Prevent it from becoming too wide */
+    text-align: right; /* Align the pre block to the right within this div */
+    margin-left: auto; /* Push the overlay to the right */
+}
+
+#portfolio-overlay {
+    top: 20px;
+    right: 20px;
+    bottom: auto; /* Override previous bottom positioning */
+    left: auto; /* Override previous left positioning */
+    transform: none; /* Remove previous transform */
+    text-align: right; /* Align text to the right */
+}
+
+.text-overlay-content pre {
+    white-space: pre; /* Ensures ASCII art formatting is kept */
+    font-family: 'Courier New', Courier, monospace;
+    line-height: 1em; 
+    font-size: 10px; /* Default/Desktop font size */
+    color: #fff; /* Changed to white text */
+    background-color: transparent; /* Overlay div handles background */
+    padding: 0;
+    margin: 0;
+    text-align: left; /* Align ASCII art to the left within its pre block */
+}
+
+@media (max-width: 767px) {
+    .text-overlay-content pre {
+        font-size: 6px; /* Smaller font size for mobile */
+        max-width: 100%; /* Ensure pre tag does not exceed parent's width */
+        display: inline-block; /* Allows centering and respects width/max-width */
+        overflow-x: hidden; /* Clip content if it's still too wide for the pre block */
+    }
+
+    /* Mobile positioning for all overlays */
+    #coder-overlay, /* Renamed from #home-overlay */
+    #about-overlay,
+    #contact-overlay,
+    #portfolio-overlay {
+        top: 10px;
+        left: 50%; /* Center horizontally */
+        right: auto; /* Reset desktop 'right' property */
+        transform: translateX(-50%); /* Adjust for centering */
+        width: calc(100% - 20px); /* Force container to take full available width */
+        max-width: calc(100% - 20px); /* Max width with padding (can be redundant if width is set like this) */
+        margin-left: 0; /* Reset desktop 'margin-left' */
+        text-align: center; /* Center the <pre> block within this container */
     }
 }
 

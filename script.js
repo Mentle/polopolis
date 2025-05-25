@@ -19,21 +19,34 @@ let currentInitialCameraSettings = {}; // Holds the current camera perspective s
 let animationClipsStore = {}; // Global store for animation clips { modelPath: { animationName: clip } }
 let targetOfCurrentAnimation = null; // Stores the key of the state the camera is currently tweening towards
 
+// Flag for initial load animation
+let isInitialLoad = true;
+
+// Flag to manage OrbitControls update immediately after tween completion
+let justCompletedTween = false;
+
 // --- Camera Perspectives Configuration ---
 // User will update these values after finding them via console logs
 const cameraPerspectives = {
     desktop: {
-        coder:     { position: { x: 0.533, y: 0.361, z: 2.011 }, target: { x: 0.026, y: -0.273, z: 0.143 } },
-        about:     { position: { x: 0.001, y: 1.036, z: 0.568 }, target: { x: -0.537, y: 0.579, z: 0.071 } },
-        contact:   { position: { x: -0.242, y: 0.532, z: 0.684 }, target: { x: 0.274, y: 0.790, z: -0.265 } },
-        portfolio: { position: { x: 1.246, y: -0.726, z: 0.061 }, target: {  x: 0.217, y: -0.300, z: 0.080 } }
+        coder:     { position: { x:  -1.933, y: 0.773, z: 1.673 }, target: { x: 0.026, y: -0.273, z: 0.143 } },
+        about:     { position: { x: -0.022, y: 0.981, z: 0.489}, target: { x: -0.356, y: 0.497, z: -0.143 } },
+        contact:   { position: { x: -0.149, y: 0.477, z: 0.679 }, target: { x: 0.655, y: 0.665, z: -0.064 } },
+        portfolio: { position: { x: 1.760, y: -0.764, z: 0.337}, target: { x: 0.603, y: -0.166, z: -0.290} }
     },
     mobile: {
         coder:     { position: { x: -1.933, y: 0.773, z: 1.673 }, target: { x: 0.216, y: -0.140, z: 0.389 } },
-        about:     { position: { x: 0.941, y: 1.283, z: 1.160 }, target: { x: -0.329, y: 0.391, z: 0.389 } },
-        contact:   { position: { x: 0.783, y: 0.875, z: 0.604}, target: { x: -0.115, y: 0.678, z: 0.108 } },
-        portfolio: { position: { x: 1.590, y: -0.687, z: 1.348 }, target: { x: -0.148, y: 0.214, z: 0.225 } }
+        about:     { position: { x: 0.456, y: 1.610, z: 1.063 }, target: { x: -0.171, y: 0.436, z: 0.059 } },
+        contact:   { position: { x: -0.720, y: 0.570, z: 0.735}, target: { x: 0.126, y: 0.657, z: 0.128 } },
+        portfolio: { position: { x: 2.354, y: -0.486, z: 1.339 }, target: { x: 0.135, y: 0.490, z: -0.030 } }
     }
+};
+
+const initialModelRotations = {
+    coder:     { x: 0, y: 0, z: 0 },
+    about:     { x: 0, y: 0, z: 0 },
+    contact:   { x: 0, y: 0, z: 0 },
+    portfolio: { x: 0, y: 0, z: 0 }
 };
 
 const asciiCharacters = ' .:-=+*#%@░';
@@ -48,69 +61,24 @@ let loader, dracoLoader; // Make loaders global
 let computerModel = null; // To store the computer model
 const computerModelPath = './computer.glb'; // Path to the computer model
 
+// HTML Overlay Elements
+let homeOverlay, aboutOverlay, contactOverlay, portfolioOverlay;
+let allOverlays = [];
+
+// Typing animation variables
+const overlayOriginalTexts = {};
+let currentTextAnimationInterval = null;
+const typingSpeedMs = 50; // ms per character or line step
+const useLineTyping = true; // true for line-by-line, false for char-by-char
+let activeTypingOverlayId = null;
+
 // Home-specific lights
 let homeFillLight, homeRimLight;
 
 // Global store for animation clips from loaded models
 
 // --- Typing Effect and Connection Info ---
-const typingSpeed = 50;
-
-function typeWriter(elementId, text, callback) {
-    const element = document.getElementById(elementId);
-    if (!element) {
-        console.error(`Element with ID ${elementId} not found for typewriter.`);
-        return;
-    }
-    element.innerHTML = "";
-    let i = 0;
-    function type() {
-        if (i < text.length) {
-            element.innerHTML += text.charAt(i);
-            i++;
-            setTimeout(type, typingSpeed);
-        } else if (callback) {
-            callback();
-        }
-    }
-    type();
-}
-
-async function displayConnectionInfo() {
-    const infoElementId = 'connection-info';
-    let locationString = "Location: N/A";
-    try {
-        const response = await fetch('https://ipapi.co/json/');
-        if (response.ok) {
-            const data = await response.json();
-            locationString = `Connecting from: ${data.city || 'Unknown City'}, ${data.region || 'Unknown Region'}, ${data.country_name || 'Unknown Country'}`;
-        } else {
-            locationString = `Location: Error fetching (status ${response.status})`;
-        }
-    } catch (error) {
-        console.error("Error fetching location:", error);
-        locationString = "Location: Error fetching (network issue)";
-    }
-    const now = new Date();
-    const timeString = `Time: ${now.toLocaleString()}`;
-    const fullText = `${locationString}\n${timeString}`;
-    typeWriter(infoElementId, fullText);
-}
-
-// --- End Typing Effect and Connection Info ---
-
-// Helper function to dispose of materials and their textures
-function cleanMaterial(material) {
-    if (!material) return;
-    // console.log('Cleaning material:', material.name);
-    if (material.map) material.map.dispose();
-    if (material.lightMap) material.lightMap.dispose();
-    if (material.bumpMap) material.bumpMap.dispose();
-    if (material.normalMap) material.normalMap.dispose();
-    if (material.specularMap) material.specularMap.dispose();
-    if (material.envMap) material.envMap.dispose();
-    material.dispose();
-}
+// Removed the typingSpeed constant
 
 function loadNewModel(modelKeyToLoad, onLoadedCallback) {
     if (!modelKeyToLoad || !modelPaths[modelKeyToLoad]) {
@@ -258,59 +226,96 @@ function switchModelAndAnimateCamera(newModelKeyFromLink) {
     modelSwapped = false; // Reset model swap flag
 
     const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
-    const finalPerspective = cameraPerspectives[deviceType][newModelKeyFromLink];
 
+    // --- Define Target State (for the destination view) ---
+    const finalPerspective = cameraPerspectives[deviceType][newModelKeyFromLink];
     if (!finalPerspective) {
-        console.error(`[switchModelAndAnimateCamera] Critical: Final perspective for ${newModelKeyFromLink} not found. Aborting animation.`);
-        isAnimatingCamera = false;
+        console.error(`[switchModelAndAnimateCamera] Critical: Final perspective for ${newModelKeyFromLink} on ${deviceType} not found. Aborting animation.`);
         targetOfCurrentAnimation = null;
-        controls.enabled = true;
+        isAnimatingCamera = false;
         return;
     }
-
-    // Actual current camera state for smooth departure of position/radius/phi
-    const actualStartPos = camera.position.clone();
-    const actualStartTarget = controls.target.clone();
-    const actualStartVec = actualStartPos.clone().sub(actualStartTarget);
-    const actualStartRadius = actualStartVec.length();
-    const actualStartYOverR = actualStartRadius > 0.001 ? Math.max(-1, Math.min(1, actualStartVec.y / actualStartRadius)) : 1;
-    const actualStartPhi = Math.acos(actualStartYOverR);
-
-    // Determine start parameters for initialThetaForSpin for consistency if leaving an auto-rotating scene
-    let canonicalStartPosForThetaCalc = actualStartPos;
-    let canonicalStartTargetForThetaCalc = actualStartTarget;
-
-    // If leaving 'coder' (which auto-rotates), use its defined perspective for theta calculation
-    if (currentModelKey === 'coder') { 
-        const departingPerspective = cameraPerspectives[deviceType][currentModelKey];
-        if (departingPerspective) {
-            canonicalStartPosForThetaCalc = new THREE.Vector3(departingPerspective.position.x, departingPerspective.position.y, departingPerspective.position.z);
-            canonicalStartTargetForThetaCalc = new THREE.Vector3(departingPerspective.target.x, departingPerspective.target.y, departingPerspective.target.z);
-        } else {
-            console.warn(`[switchModelAndAnimateCamera] Departing perspective for '${currentModelKey}' not found. Using actuals for theta calc.`);
-        }
-    }
-    
-    const canonicalStartVecForTheta = canonicalStartPosForThetaCalc.clone().sub(canonicalStartTargetForThetaCalc);
-    const canonicalStartRadiusForTheta = canonicalStartVecForTheta.length(); // Used for safety in atan2
-    const initialThetaForSpin = canonicalStartRadiusForTheta > 0.001 ? Math.atan2(canonicalStartVecForTheta.x, canonicalStartVecForTheta.z) : (actualStartRadius > 0.001 ? Math.atan2(actualStartVec.x, actualStartVec.z) : 0);
-
-    // Target state (from cameraPerspectives for newModelKeyFromLink)
     const endPos = new THREE.Vector3(finalPerspective.position.x, finalPerspective.position.y, finalPerspective.position.z);
     const endTarget = new THREE.Vector3(finalPerspective.target.x, finalPerspective.target.y, finalPerspective.target.z);
     const endVec = endPos.clone().sub(endTarget);
     const endRadius = endVec.length();
     const endYOverR = endRadius > 0.001 ? Math.max(-1, Math.min(1, endVec.y / endRadius)) : 1;
-    const endPhi = Math.acos(endYOverR);
+    const endPhi = Math.acos(endYOverR); // Polar angle from +Y
+    const endTheta = endRadius > 0.001 ? Math.atan2(endVec.x, endVec.z) : 0; // Azimuthal angle in XZ plane
 
-    // Calculate the final azimuthal angle for the camera's orientation around its target
-    const finalAzimuth = endRadius > 0.001 ? Math.atan2(endVec.x, endVec.z) : initialThetaForSpin;
+    // --- Define Starting State for the Tween ---
+    let startPosForTween;
+    let startTargetForTween;
+
+    if (currentModelKey === 'coder') {
+        const canonicalCoderPerspective = cameraPerspectives[deviceType]['coder'];
+        if (canonicalCoderPerspective) {
+            // FORCE SNAP to canonical 'coder' perspective before starting tween
+            startPosForTween = new THREE.Vector3(canonicalCoderPerspective.position.x, canonicalCoderPerspective.position.y, canonicalCoderPerspective.position.z);
+            startTargetForTween = new THREE.Vector3(canonicalCoderPerspective.target.x, canonicalCoderPerspective.target.y, canonicalCoderPerspective.target.z);
+            
+            // Update live camera and controls to this snapped position *before* tween starts
+            camera.position.copy(startPosForTween);
+            controls.target.copy(startTargetForTween);
+            camera.lookAt(startTargetForTween); // Ensure camera is looking at the new target
+            controls.update(); // IMPORTANT: Update controls to reflect the snap, so OrbitControls doesn't fight it
+        } else {
+            console.warn("[switchModelAndAnimateCamera] Canonical 'coder' perspective not found. Using live values.");
+            startPosForTween = camera.position.clone();
+            startTargetForTween = controls.target.clone();
+        }
+    } else {
+        // For other views, use live values (smoother departure)
+        startPosForTween = camera.position.clone();
+        startTargetForTween = controls.target.clone();
+    }
+
+    let startTarget = controls.target.clone();
+
+    // --- SNAP TO CANONICAL 'CODER' IF DEPARTING FROM 'CODER' --- 
+    if (currentModelKey === 'coder' && newModelKeyFromLink !== 'coder') {
+        console.log(`[Snapping Home] Departing 'coder' for '${newModelKeyFromLink}'. Snapping start of tween to canonical 'coder' perspective.`);
+        const deviceTypeForSnap = window.innerWidth < 768 ? 'mobile' : 'desktop'; // Ensure correct device type
+        const homePerspective = cameraPerspectives[deviceTypeForSnap]['coder'];
+        if (homePerspective) {
+            startPosForTween.set(homePerspective.position.x, homePerspective.position.y, homePerspective.position.z);
+            startTargetForTween.set(homePerspective.target.x, homePerspective.target.y, homePerspective.target.z);
+            
+            // Immediately update camera and controls to this snapped state BEFORE tween calculation uses them
+            // This ensures the visual starting point of the tween is the snapped canonical 'coder' view.
+            camera.position.copy(startPosForTween);
+            camera.up.set(0, 1, 0); // Explicitly reset camera up vector
+            controls.target.copy(startTargetForTween);
+            camera.lookAt(startTargetForTween);
+            // It's important to call controls.update() here if controls might have been disabled
+            // or to ensure OrbitControls internal state matches this forced position.
+            controls.update(); 
+
+            console.log(`[Snapping Home] Snapped startPosForTween to: Px=${startPosForTween.x.toFixed(3)}, Py=${startPosForTween.y.toFixed(3)}, Pz=${startPosForTween.z.toFixed(3)}`);
+            console.log(`[Snapping Home] Snapped startTargetForTween for tween to: Tx=${startTargetForTween.x.toFixed(3)}, Ty=${startTargetForTween.y.toFixed(3)}, Tz=${startTargetForTween.z.toFixed(3)}`);
+        } else {
+            console.warn(`[Snapping Home] Canonical 'coder' perspective for '${deviceTypeForSnap}' not found for snapping. Tween will start from current camera state.`);
+        }
+    }
+    // --- END SNAP LOGIC ---
+
+    // Calculate initial radius, phi, and theta based on the determined startPosForTween and startTargetForTween
+    const startVecForTween = startPosForTween.clone().sub(startTargetForTween);
+    const startRadiusForTween = startVecForTween.length();
+    const startYOverRForTween = startRadiusForTween > 0.001 ? Math.max(-1, Math.min(1, startVecForTween.y / startRadiusForTween)) : 1;
+    const startPhiForTween = Math.acos(startYOverRForTween);
+    const initialThetaForSpin = startRadiusForTween > 0.001 ? Math.atan2(startVecForTween.x, startVecForTween.z) : 0;
+
+    // --- Tween Setup ---
+    isAnimatingCamera = true;
+    controls.enabled = false; // Disable controls during animation
+    modelSwapped = false; // Reset model swap flag
 
     const duration = 2000; // Main animation duration
     const currentOrbitCenter = new THREE.Vector3(); // To be reused in onUpdate
 
     // The target theta for the tween includes a full spin and ends at the finalAzimuth
-    let targetAnimatedTheta = finalAzimuth + Math.PI * 2;
+    let targetAnimatedTheta = endTheta + Math.PI * 2;
     // Ensure the spin is in a somewhat predictable direction (e.g., mostly positive)
     // If finalAzimuth is far behind initialThetaForSpin, adding just 2PI might result in a very short spin or reverse.
     // This ensures at least a full spin towards the finalAzimuth direction.
@@ -318,18 +323,22 @@ function switchModelAndAnimateCamera(newModelKeyFromLink) {
         targetAnimatedTheta += Math.PI * 2; // Add another full spin to ensure it goes 'forward'
     }
 
-    new TWEEN.Tween({ alpha: 0, animatedTheta: initialThetaForSpin })
+    let modelSwappedInTween = false; // Renamed from modelSwapped to avoid conflict with global
+
+    const tween = new TWEEN.Tween({
+        alpha: 0, // Interpolation factor
+        animatedTheta: initialThetaForSpin // Start theta for the spin
+    })
         .to({ alpha: 1, animatedTheta: targetAnimatedTheta }, duration)
         .easing(TWEEN.Easing.Quadratic.InOut)
         .onUpdate(({ alpha, animatedTheta }) => {
-            // Interpolate orbit center from actualStartTarget to endTarget
-            currentOrbitCenter.lerpVectors(actualStartTarget, endTarget, alpha);
-            // Interpolate radius from actualStartRadius to endRadius
-            const currentRadius = actualStartRadius + (endRadius - actualStartRadius) * alpha;
-            // Interpolate phi from actualStartPhi to endPhi
-            const currentPhi = actualStartPhi + (endPhi - actualStartPhi) * alpha;
+            // Interpolate orbit center from startTargetForTween to endTarget
+            currentOrbitCenter.lerpVectors(startTargetForTween, endTarget, alpha);
+            // Interpolate radius from startRadiusForTween to endRadius
+            const currentRadius = startRadiusForTween + (endRadius - startRadiusForTween) * alpha;
+            // Interpolate phi from startPhiForTween to endPhi
+            const currentPhi = startPhiForTween + (endPhi - startPhiForTween) * alpha;
 
-            // Use the animatedTheta (which starts from the potentially canonical initialThetaForSpin) for positioning
             camera.position.x = currentOrbitCenter.x + currentRadius * Math.sin(currentPhi) * Math.sin(animatedTheta);
             camera.position.y = currentOrbitCenter.y + currentRadius * Math.cos(currentPhi);
             camera.position.z = currentOrbitCenter.z + currentRadius * Math.sin(currentPhi) * Math.cos(animatedTheta);
@@ -343,7 +352,7 @@ function switchModelAndAnimateCamera(newModelKeyFromLink) {
             const totalAngularTravel = targetAnimatedTheta - initialThetaForSpin;
             const halfwayAngularPoint = initialThetaForSpin + totalAngularTravel * 0.5;
 
-            if (!modelSwapped && animatedTheta >= halfwayAngularPoint) { // Or use alpha >= 0.5 for simpler halfway point
+            if (!modelSwappedInTween && animatedTheta >= halfwayAngularPoint) { // Or use alpha >= 0.5 for simpler halfway point
                 const previousModelKey = currentModelKey; 
                 const currentModelFile = modelPaths[previousModelKey]; 
                 const targetModelFile = modelPaths[newModelKeyFromLink]; 
@@ -370,38 +379,231 @@ function switchModelAndAnimateCamera(newModelKeyFromLink) {
                 if (!modelWasReloadedByLoadNewModel) {
                     currentModelKey = newModelKeyFromLink;
                 }
-                modelSwapped = true;
+                // AT THIS POINT, currentModelKey IS newModelKeyFromLink, and model is the correct one.
+                // Apply initial rotation for the newModelKeyFromLink (which is now currentModelKey)
+                if (model && initialModelRotations[currentModelKey]) { 
+                    const rot = initialModelRotations[currentModelKey];
+                    model.rotation.set(rot.x, rot.y, rot.z);
+                    console.log(`[TWEEN onUpdate] Model rotation reset for ${currentModelKey} to x:${rot.x.toFixed(3)}, y:${rot.y.toFixed(3)}, z:${rot.z.toFixed(3)}`);
+                } else {
+                    if (!model) console.warn("[TWEEN onUpdate] Cannot set model rotation: model is undefined.");
+                    if (!initialModelRotations[currentModelKey]) console.warn(`[TWEEN onUpdate] Cannot set model rotation: initialModelRotations for ${currentModelKey} is undefined.`);
+                }
+
+                modelSwappedInTween = true;
                 console.log(`[TWEEN onUpdate] Model/Animation swap block. currentModelKey is NOW: ${currentModelKey}`);
 
-                // Manage computerModel visibility based on the final currentModelKey for this state
+                // Manage computerModel visibility and rotation based on the final currentModelKey for this state
                 if (computerModel) {
                     computerModel.visible = (currentModelKey === 'coder');
-                    console.log(`[TWEEN onUpdate] Computer model visibility set to ${computerModel.visible} for currentModelKey ${currentModelKey}`);
+                    if (currentModelKey === 'coder') {
+                        // Reset computer model's rotation to default (0,0,0) when 'coder' view is active
+                        computerModel.rotation.set(0, 0, 0);
+                    }
+                    console.log(`[TWEEN onUpdate] Computer model visibility set to ${computerModel.visible} for key ${currentModelKey}`);
                 }
                 // Update home-specific lighting based on the new currentModelKey
                 updateHomeSpecificLighting(currentModelKey === 'coder');
+
+                // --- Manage Text Overlays ---
+                updateActiveOverlay(currentModelKey);
             }
         })
         .onComplete(() => {
-            console.log(`[TWEEN onComplete] Combined spin/transition for ${newModelKeyFromLink} complete.`);
-            // Ensure final state is precise
-            camera.position.copy(endPos);
-            controls.target.copy(endTarget);
-            camera.lookAt(endTarget);
+            const finalDeviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
+            const perspective = cameraPerspectives[finalDeviceType][newModelKeyFromLink];
 
-            isAnimatingCamera = false;
+            console.log(`[TWEEN onComplete] START for ${newModelKeyFromLink}. Target perspective:`, perspective ? JSON.stringify(perspective) : 'NOT FOUND');
+            console.log(`[TWEEN onComplete] Camera BEFORE: Px=${camera.position.x.toFixed(3)}, Py=${camera.position.y.toFixed(3)}, Pz=${camera.position.z.toFixed(3)}`);
+            console.log(`[TWEEN onComplete] Target BEFORE: Tx=${controls.target.x.toFixed(3)}, Ty=${controls.target.y.toFixed(3)}, Tz=${controls.target.z.toFixed(3)}`);
+
+            if (perspective) {
+                const finalEndPos = new THREE.Vector3(perspective.position.x, perspective.position.y, perspective.position.z);
+                const finalEndTarget = new THREE.Vector3(perspective.target.x, perspective.target.y, perspective.target.z);
+
+                camera.position.copy(finalEndPos);
+                controls.target.copy(finalEndTarget); // This is THE most important line for the lookAt point
+                camera.lookAt(finalEndTarget);        // This orients the camera based on its new position and the target
+            } else {
+                console.error(`[TWEEN onComplete] CRITICAL: Perspective for ${newModelKeyFromLink} on ${finalDeviceType} not found! Cannot set final state.`);
+                // Fallback logic from previous version (if endPos/endTarget are in scope and defined)
+                if (typeof endPos !== 'undefined' && typeof endTarget !== 'undefined') {
+                    camera.position.copy(endPos);
+                    controls.target.copy(endTarget);
+                    camera.lookAt(endTarget);
+                    console.warn('[TWEEN onComplete] Used fallback endPos/endTarget from outer scope.');
+                } else {
+                    console.error('[TWEEN onComplete] Fallback endPos/endTarget also undefined. Final camera state may be incorrect.');
+                }
+            }
+            
+            console.log(`[TWEEN onComplete] Camera AFTER: Px=${camera.position.x.toFixed(3)}, Py=${camera.position.y.toFixed(3)}, Pz=${camera.position.z.toFixed(3)}`);
+            console.log(`[TWEEN onComplete] Target AFTER: Tx=${controls.target.x.toFixed(3)}, Ty=${controls.target.y.toFixed(3)}, Tz=${controls.target.z.toFixed(3)}`);
+
             targetOfCurrentAnimation = null; 
-            controls.enabled = true;     
+            isAnimatingCamera = false;       
+            controls.enabled = true;         
+            // Force OrbitControls to accept the new state and clear old momentum
+            const oldDamping = controls.enableDamping;
+            controls.enableDamping = false; // Temporarily disable damping
+            console.log("[TWEEN onComplete] Temporarily disabled damping. Calling controls.update() to clear momentum.");
+            controls.update(); // Call update. With damping off, it should just sync internal state.
+            controls.enableDamping = oldDamping; // Restore damping
+            console.log("[TWEEN onComplete] Restored damping. Damping is now:", controls.enableDamping);
+            justCompletedTween = true; // Set flag to delay next animate() loop's controls.update()
+
+            console.log(`[TWEEN onComplete] END for ${newModelKeyFromLink}. Controls enabled. isAnimatingCamera = false. justCompletedTween = true.`);
+            // if (onCompleteCallback) onCompleteCallback(true); // Assuming onCompleteCallback is defined if used
         })
         .start();
 }
 
-init();
-animate();
+function animateOverlayText(overlayId, typeIn, callback) {
+    if (currentTextAnimationInterval) {
+        clearInterval(currentTextAnimationInterval);
+        currentTextAnimationInterval = null;
+    }
+
+    const overlayElement = document.getElementById(overlayId);
+    if (!overlayElement) {
+        console.error(`Overlay element not found: ${overlayId}`);
+        if (callback) callback();
+        return;
+    }
+    const preElement = overlayElement.querySelector('pre');
+    if (!preElement) {
+        console.error(`PRE element not found in: ${overlayId}`);
+        if (callback) callback();
+        return;
+    }
+
+    const fullText = overlayOriginalTexts[overlayId] || '';
+    let currentText = typeIn ? '' : fullText;
+    preElement.textContent = currentText;
+    overlayElement.style.display = 'block'; // Make sure overlay container is visible for animation
+
+    activeTypingOverlayId = overlayId; // Mark this overlay as the one being animated
+
+    if (useLineTyping) {
+        const lines = fullText.split('\n');
+        let currentLineIndex = typeIn ? 0 : lines.length;
+
+        currentTextAnimationInterval = setInterval(() => {
+            if (typeIn) {
+                if (currentLineIndex < lines.length) {
+                    currentText = lines.slice(0, currentLineIndex + 1).join('\n');
+                    preElement.textContent = currentText;
+                    currentLineIndex++;
+                } else {
+                    clearInterval(currentTextAnimationInterval);
+                    currentTextAnimationInterval = null;
+                    activeTypingOverlayId = null; // Animation complete
+                    if (callback) callback();
+                }
+            } else { // Typing out
+                if (currentLineIndex > 0) {
+                    currentLineIndex--;
+                    currentText = lines.slice(0, currentLineIndex).join('\n');
+                    preElement.textContent = currentText;
+                } else {
+                    clearInterval(currentTextAnimationInterval);
+                    currentTextAnimationInterval = null;
+                    overlayElement.style.display = 'none'; // Hide after typing out
+                    activeTypingOverlayId = null; // Animation complete
+                    if (callback) callback();
+                }
+            }
+        }, typingSpeedMs);
+    } else { // Character-by-character typing
+        let currentCharIndex = typeIn ? 0 : fullText.length;
+
+        currentTextAnimationInterval = setInterval(() => {
+            if (typeIn) {
+                if (currentCharIndex < fullText.length) {
+                    currentText = fullText.substring(0, currentCharIndex + 1);
+                    preElement.textContent = currentText;
+                    currentCharIndex++;
+                } else {
+                    clearInterval(currentTextAnimationInterval);
+                    currentTextAnimationInterval = null;
+                    activeTypingOverlayId = null; // Animation complete
+                    if (callback) callback();
+                }
+            } else { // Typing out
+                if (currentCharIndex > 0) {
+                    currentCharIndex--;
+                    currentText = fullText.substring(0, currentCharIndex);
+                    preElement.textContent = currentText;
+                } else {
+                    clearInterval(currentTextAnimationInterval);
+                    currentTextAnimationInterval = null;
+                    overlayElement.style.display = 'none'; // Hide after typing out
+                    activeTypingOverlayId = null; // Animation complete
+                    if (callback) callback();
+                }
+            }
+        }, typingSpeedMs);
+    }
+}
+
+function updateActiveOverlay(newModelKey) {
+    const newOverlayId = `${newModelKey}-overlay`;
+    let previousOverlayId = null;
+
+    // Find a currently visible overlay that is not the new one
+    for (const overlay of allOverlays) {
+        if (overlay && overlay.style.display === 'block' && overlay.id !== newOverlayId) {
+            previousOverlayId = overlay.id;
+            break;
+        }
+    }
+    // If an animation was active on another overlay, that's our previous one.
+    if (activeTypingOverlayId && activeTypingOverlayId !== newOverlayId) {
+        previousOverlayId = activeTypingOverlayId;
+    }
+
+    // Clear any ongoing text animation immediately if we're switching
+    if (currentTextAnimationInterval) {
+        clearInterval(currentTextAnimationInterval);
+        currentTextAnimationInterval = null;
+        // If an overlay was being animated out, ensure it's hidden
+        if (previousOverlayId && document.getElementById(previousOverlayId)) {
+            const prevOverlayElem = document.getElementById(previousOverlayId);
+            const prevPreElement = prevOverlayElem.querySelector('pre');
+            if(prevPreElement) prevPreElement.textContent = ''; // Clear its text
+            prevOverlayElem.style.display = 'none';
+        }
+    }
+
+    if (previousOverlayId && previousOverlayId !== newOverlayId) {
+        // Type out the previous overlay, then type in the new one
+        animateOverlayText(previousOverlayId, false, () => {
+            // Ensure the previous one is fully hidden if not handled by animation
+            const prevElem = document.getElementById(previousOverlayId);
+            if (prevElem) prevElem.style.display = 'none'; 
+            
+            const newOverlayElement = document.getElementById(newOverlayId);
+            if (newOverlayElement) {
+                animateOverlayText(newOverlayId, true);
+            } else {
+                console.error(`New overlay element not found for typing in: ${newOverlayId}`);
+            }
+        });
+    } else {
+        // No previous overlay to type out, or it's the same, just type in the new one
+        // (or re-type if it was interrupted)
+        const newOverlayElement = document.getElementById(newOverlayId);
+        if (newOverlayElement) {
+            // If it's the same overlay and it's already fully visible, do nothing further.
+            // This check is a bit tricky with animations. For now, let's assume re-typing is fine.
+            animateOverlayText(newOverlayId, true);
+        } else {
+            console.error(`New overlay element not found for typing in: ${newOverlayId}`);
+        }
+    }
+}
 
 function init() {
-    displayConnectionInfo();
-
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
 
@@ -456,6 +658,14 @@ function init() {
     loadNewModel(currentModelKey, (success) => {
         if (success) {
             console.log(`Initial model ${currentModelKey} loaded successfully.`);
+            
+            if (isInitialLoad && currentModelKey === 'coder') {
+                performInitialZoomOutAnimation();
+                isInitialLoad = false;
+            } else {
+                // For non-coder initial load or subsequent loads, ensure controls are enabled if no animation is running
+                if (!isAnimatingCamera) controls.enabled = true;
+            }
             // Initial visibility for computer model is handled after it loads, based on currentModelKey
         } else {
             console.error(`Initial model ${currentModelKey} failed to load.`);
@@ -505,7 +715,7 @@ function init() {
     // Re-add event listener for camera changes (for debugging/finding positions)
     controls.addEventListener('change', () => {
         if (!isAnimatingCamera) { // Only log if not during our programmed animation
-            console.clear();
+            //console.clear();
             console.log('--- Manual Camera State ---');
             console.log(`Current Model: ${currentModelKey}`);
             console.log(`Position: x: ${camera.position.x.toFixed(3)}, y: ${camera.position.y.toFixed(3)}, z: ${camera.position.z.toFixed(3)}`);
@@ -514,26 +724,73 @@ function init() {
         }
     });
 
-    // Event listeners for navigation links
-    document.getElementById('nav-about').addEventListener('click', (event) => {
-        event.preventDefault();
-        switchModelAndAnimateCamera('about');
-    });
-    document.getElementById('nav-contact').addEventListener('click', (event) => {
-        event.preventDefault();
-        switchModelAndAnimateCamera('contact');
-    });
-    document.getElementById('nav-portfolio').addEventListener('click', (event) => {
-        event.preventDefault();
-        switchModelAndAnimateCamera('portfolio');
-    });
-    // Optional: Add a way to go back to the 'coder' model, e.g., clicking the connection info or a logo
-    document.getElementById('connection-info').addEventListener('click', (event) => {
-        event.preventDefault();
-        switchModelAndAnimateCamera('coder');
+    // Get overlay elements
+    homeOverlay = document.getElementById('coder-overlay'); // Changed from 'home-overlay'
+    aboutOverlay = document.getElementById('about-overlay');
+    contactOverlay = document.getElementById('contact-overlay');
+    portfolioOverlay = document.getElementById('portfolio-overlay');
+    allOverlays = [homeOverlay, aboutOverlay, contactOverlay, portfolioOverlay];
+
+    // Store original text and clear overlays for typing animation
+    allOverlays.forEach(overlay => {
+        if (overlay) {
+            const preElement = overlay.querySelector('pre');
+            if (preElement) {
+                overlayOriginalTexts[overlay.id] = preElement.textContent;
+                preElement.textContent = ''; // Start empty
+            } else {
+                overlayOriginalTexts[overlay.id] = ''; // No pre tag, store empty
+            }
+            overlay.style.display = 'none'; // Initially hide all overlay containers
+        }
     });
 
+    // Setup navigation links after everything is initialized
+    setupNavigationLinks();
+
     window.addEventListener('resize', onWindowResize, false);
+
+    // Show initial overlay (home/coder)
+    updateActiveOverlay(currentModelKey);
+}
+
+function setupNavigationLinks() {
+    // Logo click (Home)
+    const logoElement = document.getElementById('logo');
+    if (logoElement) {
+        logoElement.addEventListener('click', (event) => {
+            event.preventDefault();
+            switchModelAndAnimateCamera('coder');
+        });
+    }
+
+    // New Home link
+    const navHome = document.getElementById('nav-home');
+    if (navHome) {
+        navHome.addEventListener('click', (event) => {
+            event.preventDefault();
+            switchModelAndAnimateCamera('coder');
+        });
+    }
+
+    // About link
+    const navLinks = {
+        'nav-about': 'about',
+        'nav-contact': 'contact',
+        'nav-portfolio': 'portfolio',
+        // Assuming 'connection-info' or a similar element acts as 'Home'
+        'connection-info': 'coder' 
+    };
+
+    for (const id in navLinks) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('click', (event) => {
+                event.preventDefault();
+                switchModelAndAnimateCamera(navLinks[id]);
+            });
+        }
+    }
 }
 
 function onWindowResize() {
@@ -565,6 +822,16 @@ function animate() {
         mixer.update(delta);
     }
 
+    if (!isAnimatingCamera && controls.enabled) {
+        if (justCompletedTween) {
+            // console.log("[Animate] Skipping controls.update() for one frame post-tween.");
+            justCompletedTween = false; // Consume the flag
+        } else {
+            controls.update(); // Apply OrbitControls changes like damping or user input
+        }
+    }
+
+    // Auto-rotation for 'coder' and 'portfolio' screens when camera is not animating
     if (!isAnimatingCamera) {
         if (currentModelKey === 'coder') { // User changed this: only 'coder' for main model auto-rotation
             if (model) { 
@@ -574,12 +841,24 @@ function animate() {
         if (currentModelKey === 'coder' && computerModel && computerModel.visible) { 
             computerModel.rotation.y += modelRotationSpeed; 
         }
-        controls.update(); // Only call controls.update when not animating camera
     }
     // If isAnimatingCamera is true, TWEEN is handling camera, so OrbitControls should not interfere.
 
     renderer.render(scene, camera);
     effect.render(scene, camera);
+}
+
+// Helper function to dispose of materials and their textures
+function cleanMaterial(material) {
+    if (!material) return;
+    // console.log('Cleaning material:', material.name);
+    if (material.map) material.map.dispose();
+    if (material.lightMap) material.lightMap.dispose();
+    if (material.bumpMap) material.bumpMap.dispose();
+    if (material.normalMap) material.normalMap.dispose();
+    if (material.specularMap) material.specularMap.dispose();
+    if (material.envMap) material.envMap.dispose();
+    material.dispose();
 }
 
 // Helper function to control visibility of Home-specific lights
@@ -590,5 +869,67 @@ function updateHomeSpecificLighting(isHomeScreen) {
     if (homeRimLight) {
         homeRimLight.visible = isHomeScreen;
     }
-    console.log(`Home specific lighting visibility: Fill=${homeFillLight?.visible}, Rim=${homeRimLight?.visible}`);
+    // console.log(`Home specific lighting visibility: Fill=${homeFillLight?.visible}, Rim=${homeRimLight?.visible}`); // Less verbose
 }
+
+function performInitialZoomOutAnimation() {
+    console.log("Preparing initial zoom-out animation.");
+    // Camera is assumed to be at its final desired "Home" position and target
+    // due to the setup in init() before this function is called.
+    const finalPos = camera.position.clone();
+    const finalTarget = controls.target.clone();
+
+    const finalVec = finalPos.clone().sub(finalTarget);
+    const finalRadius = finalVec.length();
+
+    if (finalRadius < 0.01) { // If already very close or at target, skip animation
+        console.warn("Initial zoom-out: Final radius too small or camera at target, skipping animation.");
+        controls.enabled = true; // Ensure controls are enabled
+        return;
+    }
+
+    const finalYOverR = Math.max(-1, Math.min(1, finalVec.y / finalRadius));
+    const finalPhi = Math.acos(finalYOverR); // Polar angle
+    const finalTheta = Math.atan2(finalVec.x, finalVec.z); // Azimuthal angle
+
+    // Zoom in to 5% of final radius or 0.05, whichever is smaller, but not less than a tiny epsilon
+    const initialZoomedInRadius = Math.max(0.01, Math.min(0.05 * finalRadius, 0.05)); 
+
+    // Snap camera to initial zoomed-in position, looking at the final target
+    camera.position.x = finalTarget.x + initialZoomedInRadius * Math.sin(finalPhi) * Math.sin(finalTheta);
+    camera.position.y = finalTarget.y + initialZoomedInRadius * Math.cos(finalPhi);
+    camera.position.z = finalTarget.z + initialZoomedInRadius * Math.sin(finalPhi) * Math.cos(finalTheta);
+    // controls.target is already finalTarget from init()
+    camera.lookAt(finalTarget);
+    controls.update(); // Reflect immediate change in camera position
+
+    isAnimatingCamera = true;
+    controls.enabled = false;
+
+    new TWEEN.Tween({ radius: initialZoomedInRadius })
+        .to({ radius: finalRadius }, 3000) // Animate over 1.5 seconds
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onUpdate(({ radius: currentRadius }) => {
+            camera.position.x = finalTarget.x + currentRadius * Math.sin(finalPhi) * Math.sin(finalTheta);
+            camera.position.y = finalTarget.y + currentRadius * Math.cos(finalPhi);
+            camera.position.z = finalTarget.z + currentRadius * Math.sin(finalPhi) * Math.cos(finalTheta);
+            camera.lookAt(finalTarget);
+        })
+        .onStart(() => {
+            console.log("Starting initial zoom-out animation.");
+        })
+        .onComplete(() => {
+            console.log("Initial zoom-out animation complete.");
+            isAnimatingCamera = false;
+            controls.enabled = true;
+            // Ensure camera is exactly at the final position
+            camera.position.copy(finalPos); 
+            // controls.target is already correct
+            camera.lookAt(finalTarget);
+            controls.update();
+        })
+        .start();
+}
+
+init();
+animate();
