@@ -45,56 +45,81 @@ const cameraPerspectives = {
     }
 };
 
-const specificCameraOverrides = {
-    "432x874": {
-        coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-        about: { position: { x: -0.554, y: 1.009, z: 2.304 }, target: { x: -0.522, y: 0.644, z: 0.056 } },
-        portfolio: { position: { x: 3.053, y: -0.199, z: 1.418 }, target: { x: 0.301, y: 0.927, z: 0.013 } },
-        contact: { position: { x: -0.325, y: 0.048, z: 2.433 }, target: { x: -0.263, y: 0.357, z: 0.022 } }
+// Specific overrides for exact resolutions - converted to an array for closest match logic
+const definedResolutionSettings = [
+    {
+        width: 432, height: 874,
+        settings: {
+            coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
+            about: { position: { x: -0.554, y: 1.009, z: 2.304 }, target: { x: -0.522, y: 0.644, z: 0.056 } },
+            portfolio: { position: { x: 3.053, y: -0.199, z: 1.418 }, target: { x: 0.301, y: 0.927, z: 0.013 } },
+            contact: { position: { x: -0.325, y: 0.048, z: 2.433 }, target: { x: -0.263, y: 0.357, z: 0.022 } }
+        }
     },
-    "394x794": {
-        coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-        about: { position: { x: -0.212, y: 1.317, z: 2.732 }, target: { x: -0.534, y: 0.827, z: 0.033 } },
-        portfolio: { position: { x: 2.623, y: -0.319, z: 1.518 }, target: { x: 0.210, y: 0.743, z: 0.029 } },
-        contact: { position: { x: -0.789, y: 0.126, z: 2.729 }, target: { x: -0.369, y: 0.558, z: 0.073 } }
+    {
+        width: 394, height: 794,
+        settings: {
+            coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
+            about: { position: { x: -0.212, y: 1.317, z: 2.732 }, target: { x: -0.534, y: 0.827, z: 0.033 } },
+            portfolio: { position: { x: 2.623, y: -0.319, z: 1.518 }, target: { x: 0.210, y: 0.743, z: 0.029 } },
+            contact: { position: { x: -0.789, y: 0.126, z: 2.729 }, target: { x: -0.369, y: 0.558, z: 0.073 } }
+        }
     },
-    "360x776": {
-        coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-        about: { position: { x: -0.373, y: 1.607, z: 3.128 }, target: { x: -0.568, y: 1.090, z: -0.017 } },
-        portfolio: { position: { x: 2.816, y: -0.285, z: 1.627 }, target: { x: 0.247, y: 0.845, z: 0.042 } },
-        contact: { position: { x: -0.470, y: 0.293, z: 2.655 }, target: { x: -0.246, y: 0.620, z: 0.057 } }
+    {
+        width: 360, height: 776,
+        settings: {
+            coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
+            about: { position: { x: -0.373, y: 1.607, z: 3.128 }, target: { x: -0.568, y: 1.090, z: -0.017 } },
+            portfolio: { position: { x: 2.816, y: -0.285, z: 1.627 }, target: { x: 0.247, y: 0.845, z: 0.042 } },
+            contact: { position: { x: -0.470, y: 0.293, z: 2.655 }, target: { x: -0.246, y: 0.620, z: 0.057 } }
+        }
     },
-    "412x891": {
-        coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-        about: { position: { x: -0.468, y: 0.982, z: 2.216 }, target: { x: -0.437, y: 0.632, z: 0.059 } },
-        portfolio: { position: { x: 2.710, y: -0.267, z: 1.636 }, target: { x: 0.210, y: 0.833, z: 0.093 } },
-        contact: { position: { x: -0.297, y: 0.039, z: 2.471 }, target: { x: -0.233, y: 0.354, z: 0.022 } }
+    {
+        width: 412, height: 891,
+        settings: {
+            coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
+            about: { position: { x: -0.468, y: 0.982, z: 2.216 }, target: { x: -0.437, y: 0.632, z: 0.059 } },
+            portfolio: { position: { x: 2.710, y: -0.267, z: 1.636 }, target: { x: 0.210, y: 0.833, z: 0.093 } },
+            contact: { position: { x: -0.297, y: 0.039, z: 2.471 }, target: { x: -0.233, y: 0.354, z: 0.022 } }
+        }
     },
-    "915x1792": {
-        coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-        about: { position: { x: 0.427, y: 1.204, z: 1.049 }, target: { x: -0.232, y: 0.336, z: -0.086 } },
-        portfolio: { position: { x: 2.694, y: -0.445, z: 1.355 }, target: { x: 0.691, y: 0.591, z: 0.269 } },
-        contact: { position: { x: 0.433, y: 0.406, z: 1.269 }, target: { x: 0.137, y: 0.196, z: -0.443 } }
+    {
+        width: 915, height: 1792,
+        settings: {
+            coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
+            about: { position: { x: 0.427, y: 1.204, z: 1.049 }, target: { x: -0.232, y: 0.336, z: -0.086 } },
+            portfolio: { position: { x: 2.694, y: -0.445, z: 1.355 }, target: { x: 0.691, y: 0.591, z: 0.269 } },
+            contact: { position: { x: 0.433, y: 0.406, z: 1.269 }, target: { x: 0.137, y: 0.196, z: -0.443 } }
+        }
     },
-    "1024x1342": {
-        coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-        about: { position: { x: 0.114, y: 0.843, z: 1.504 }, target: { x: -0.456, y: 0.179, z: 0.118 } },
-        portfolio: { position: { x: 2.093, y: -0.621, z: 0.696 }, target: { x: 0.540, y: 0.152, z: 0.099 } },
-        contact: { position: { x: 0.047, y: 0.413, z: 0.805 }, target: { x: 0.091, y: 0.493, z: -0.108 } }
+    {
+        width: 1024, height: 1342,
+        settings: {
+            coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } }, // Assuming mobile coder for consistency, adjust if desktop coder is preferred for larger tablets
+            about: { position: { x: 0.114, y: 0.843, z: 1.504 }, target: { x: -0.456, y: 0.179, z: 0.118 } },
+            portfolio: { position: { x: 2.093, y: -0.621, z: 0.696 }, target: { x: 0.540, y: 0.152, z: 0.099 } },
+            contact: { position: { x: 0.047, y: 0.413, z: 0.805 }, target: { x: 0.091, y: 0.493, z: -0.108 } }
+        }
     },
-    "800x1236": {
-        coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-        about: { position: { x: 0.393, y: 0.941, z: 1.940 }, target: { x: -0.593, y: 0.334, z: 0.034 } },
-        portfolio: { position: { x: 2.096, y: -0.615, z: 1.088 }, target: { x: 0.513, y: 0.204, z: 0.230 } },
-        contact: { position: { x: -0.403, y: -0.134, z: 1.743 }, target: { x: 0.591, y: 0.056, z: -0.320 } }
+    {
+        width: 800, height: 1236,
+        settings: {
+            coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } }, // Assuming mobile coder
+            about: { position: { x: 0.393, y: 0.941, z: 1.940 }, target: { x: -0.593, y: 0.334, z: 0.034 } },
+            portfolio: { position: { x: 2.096, y: -0.615, z: 1.088 }, target: { x: 0.513, y: 0.204, z: 0.230 } },
+            contact: { position: { x: -0.403, y: -0.134, z: 1.743 }, target: { x: 0.591, y: 0.056, z: -0.320 } }
+        }
     },
-    "900x1156": {
-        coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-        about: { position: { x: 0.243, y: 0.641, z: 1.699 }, target: { x: -0.648, y: 0.147, z: 0.088 } },
-        portfolio: { position: { x: 2.091, y: -0.697, z: 0.371 }, target: { x: 0.493, y: 0.120, z: -0.023 } },
-        contact: { position: { x: 0.145, y: 0.294, z: 1.692 }, target: { x: 0.423, y: 0.042, z: -0.210 } }
+    {
+        width: 900, height: 1156,
+        settings: {
+            coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } }, // Assuming mobile coder
+            about: { position: { x: 0.243, y: 0.641, z: 1.699 }, target: { x: -0.648, y: 0.147, z: 0.088 } },
+            portfolio: { position: { x: 2.091, y: -0.697, z: 0.371 }, target: { x: 0.493, y: 0.120, z: -0.023 } },
+            contact: { position: { x: 0.145, y: 0.294, z: 1.692 }, target: { x: 0.423, y: 0.042, z: -0.210 } }
+        }
     }
-};
+];
 
 const initialModelRotations = {
     coder:     { x: 0, y: 0, z: 0 },
@@ -121,24 +146,44 @@ const initialZoomStartPositions = {
 
 // Function to get responsive camera settings
 function getResponsiveCameraSettings(modelKey) {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const resolutionKey = `${w}x${h}`;
+    const currentWidth = window.innerWidth;
+    const currentHeight = window.innerHeight;
 
-    if (specificCameraOverrides[resolutionKey] && specificCameraOverrides[resolutionKey][modelKey]) {
-        console.log(`[Camera] Using specific override for ${resolutionKey} - ${modelKey}`);
-        return specificCameraOverrides[resolutionKey][modelKey];
+    // 1. Try for an exact match first
+    for (const config of definedResolutionSettings) {
+        if (config.width === currentWidth && config.height === currentHeight) {
+            if (config.settings && config.settings[modelKey]) {
+                console.log(`[Camera] Using exact match for ${currentWidth}x${currentHeight} - ${modelKey}`);
+                return config.settings[modelKey];
+            }
+        }
     }
 
-    // Fallback to general mobile/desktop logic
+    // 2. If no exact match, find the closest one
+    let closestConfig = null;
+    let minDifference = Infinity;
+
+    if (definedResolutionSettings.length > 0) {
+        for (const config of definedResolutionSettings) {
+            const diff = Math.abs(currentWidth - config.width) + Math.abs(currentHeight - config.height);
+            if (diff < minDifference) {
+                minDifference = diff;
+                closestConfig = config;
+            }
+        }
+
+        if (closestConfig && closestConfig.settings && closestConfig.settings[modelKey]) {
+            console.log(`[Camera] No exact match. Using closest match (${closestConfig.width}x${closestConfig.height}) for ${currentWidth}x${currentHeight} - ${modelKey}`);
+            return closestConfig.settings[modelKey];
+        }
+    }
+
+    // 3. Ultimate fallback to general mobile/desktop if no defined settings or no closest match found
+    console.warn(`[Camera] No specific or closest setting found for ${modelKey} at ${currentWidth}x${currentHeight}. Falling back to general perspectives.`);
     if (window.innerWidth <= 768) {
-        console.log(`[Camera] Using general mobile settings for ${modelKey} (width: ${w})`);
-        // Ensure fallback to desktop if a specific modelKey isn't in mobile (e.g. 'coder' might only be in desktop for some configurations)
-        return cameraPerspectives.mobile[modelKey] || cameraPerspectives.desktop[modelKey] || cameraPerspectives.desktop.coder; 
+        return cameraPerspectives.mobile[modelKey] || cameraPerspectives.desktop[modelKey] || cameraPerspectives.desktop.coder;
     }
-    
-    console.log(`[Camera] Using general desktop settings for ${modelKey} (width: ${w})`);
-    return cameraPerspectives.desktop[modelKey] || cameraPerspectives.desktop.coder; // Fallback to coder if modelKey not found
+    return cameraPerspectives.desktop[modelKey] || cameraPerspectives.desktop.coder;
 }
 
 // ---------------------
@@ -1294,9 +1339,6 @@ function onWindowResize() {
              controls.update();
         }
     }
-
-    // Update overlay positions/styles if needed
-    adjustOverlaysForScreenSize();
 }
 
 function animate() {
