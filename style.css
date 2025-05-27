@@ -354,18 +354,19 @@ body > p {
 .project-link.button-style {
     display: inline-block;
     padding: 10px 20px;
-    background-color: #ffffff; 
-    color: white;
+    background-color: #0000247a;
+    color:  #ffffff;
     text-decoration: none;
-    border-radius: 5px;
+    border-radius: 0px;
     text-align: center;
     transition: background-color 0.3s ease;
-    border: 1px solid #00004d;
+    border: 2px dashed #fff;
     text-shadow: none; /* Override global if needed for buttons */
 }
 
 .project-link.button-style:hover {
-    background-color: #00004d;
+    background-color: #ffffff;
+    color: #00004d;
 }
 
 /* Ensure portfolio grid is visible when its overlay is active */
@@ -554,8 +555,8 @@ pre {
     padding: 10px 15px;
     margin: 10px 5px 0;
     color: #fff;
-    background-color: transparent;
-    border: 2px solid #fff;
+    background-color: #0000247a;
+    border: 2px dashed #fff;
     text-decoration: none;
     font-family: 'Courier New', Courier, monospace;
     font-size: 16px;
@@ -568,7 +569,6 @@ pre {
 .contact-buttons a:focus {
     background-color: #fff;
     color: #00004d;
-    outline: none;
 }
 
 /* Styles for the About section body text */
