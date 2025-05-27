@@ -182,7 +182,7 @@ body {
 .text-overlay-content pre {
     white-space: pre;
     font-family: 'Courier New', Courier, monospace;
-    line-height: 1.2em;
+    line-height: 1.1em;
     font-size: 10px;
     color: #fff;
     background-color: transparent;
@@ -280,7 +280,7 @@ body {
 #about-overlay .subheader-text,
 #contact-overlay .subheader-text,
 #portfolio-overlay .subheader-text {
-    text-align: center;
+    text-align: right;
     left: 0;
     right: 0;
     margin-left: auto;
