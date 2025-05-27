@@ -62,25 +62,25 @@ const definedResolutionSettings = [
             coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
             about: { position: { x: -0.072, y: 0.771, z: 1.579 }, target: { x: -0.353, y: 0.258, z: 0.072 } },
             portfolio: { position: { x: 2.623, y: -0.319, z: 1.518 }, target: { x: 0.210, y: 0.743, z: 0.029 } },
-            contact: { position: { x: -0.789, y: 0.126, z: 2.729 }, target: { x: -0.369, y: 0.558, z: 0.073 } }
+            contact: { position: { x: 0.068, y: 0.635, z: 0.926 }, target: {  x: 0.184, y: 0.754, z: 0.192 } }
         }
     },
     {
         width: 360, height: 776,
         settings: {
             coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-            about: { position: { x: -0.373, y: 1.607, z: 3.128 }, target: { x: -0.568, y: 1.090, z: -0.017 } },
+            about: { position: { x: -0.236, y: 0.514, z: 1.837 }, target: { x: -0.343, y: 0.230, z: 0.110 } },
             portfolio: { position: { x: 2.816, y: -0.285, z: 1.627 }, target: { x: 0.247, y: 0.845, z: 0.042 } },
-            contact: { position: { x: -0.470, y: 0.293, z: 2.655 }, target: { x: -0.246, y: 0.620, z: 0.057 } }
+            contact: { position: { x: 0.497, y: 0.491, z: 0.960 }, target: { x: 0.133, y: 0.684, z: 0.098 } }
         }
     },
     {
         width: 412, height: 891,
         settings: {
             coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-            about: { position: { x: -0.468, y: 0.982, z: 2.216 }, target: { x: -0.437, y: 0.632, z: 0.059 } },
+            about: { position: { x: 0.389, y: 0.396, z: 1.408 }, target: { x: -0.214, y: 0.258, z: 0.054 } },
             portfolio: { position: { x: 2.710, y: -0.267, z: 1.636 }, target: { x: 0.210, y: 0.833, z: 0.093 } },
-            contact: { position: { x: -0.297, y: 0.039, z: 2.471 }, target: { x: -0.233, y: 0.354, z: 0.022 } }
+            contact: { position: { x: 0.450, y: 0.523, z: 0.850 }, target: { x: 0.116, y: 0.610, z: 0.022 } }
         }
     },
     {

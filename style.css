@@ -311,8 +311,8 @@ body {
 
     #about-overlay .about-body-text {
         padding-top: 2vw;
-        width: 50vw; /* Take up left 40% of parent's width */
-        max-width: 50vw; /* Reinforce width constraint */
+        width: 55vw; /* Take up left 40% of parent's width */
+        max-width: 55vw; /* Reinforce width constraint */
         margin-left: 0; /* Align to the left */
         margin-right: auto; /* Allow it to not take more than 40% */
         font-size: 15px; /* Responsive font size based on viewport width */
