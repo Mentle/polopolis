@@ -129,8 +129,8 @@ const initialModelRotations = {
 };
 
 const asciiCharacters = ' .:-=+*#%@░';
-const asciiResolution = 0.25;
-const asciiScale = 1;
+const asciiResolution =0.20;
+const asciiScale =1;
 const modelRotationSpeed = 0.004; // Will be handled by animation or OrbitControls
 
 const initialZoomStartPositions = {
@@ -143,6 +143,11 @@ const initialZoomStartPositions = {
         target: new THREE.Vector3(0, 0, 0)       // Example: Looking towards origin
     }
 };
+
+// ASCII Loader variables
+const asciiSpinnerFrames = ['/', '-', '\\', '|']; // Spinner characters (note: backslash needs to be escaped)
+let asciiSpinnerIndex = 0;
+let asciiLoaderContentElement = null;
 
 // Function to get responsive camera settings
 function getResponsiveCameraSettings(modelKey) {
@@ -159,16 +164,37 @@ function getResponsiveCameraSettings(modelKey) {
         }
     }
 
-    // 2. If no exact match, find the closest one
+    // Determine the maximum width from definedResolutionSettings
+    let maxWidthFromDefined = 0;
+    const validWidths = definedResolutionSettings
+        .filter(config => typeof config.width === 'number')
+        .map(config => config.width);
+
+    if (validWidths.length > 0) {
+        maxWidthFromDefined = Math.max(...validWidths);
+    }
+
+    // 2. If there are defined resolutions AND current width is greater than the maximum width among them,
+    //    use general desktop settings.
+    if (maxWidthFromDefined > 0 && currentWidth > maxWidthFromDefined) {
+        console.log(`[Camera] Current width (${currentWidth}) > max defined width (${maxWidthFromDefined}). Using general desktop for ${modelKey}.`);
+        return cameraPerspectives.desktop[modelKey] || cameraPerspectives.desktop.coder; // Fallback to coder if specific modelKey not in desktop
+    }
+
+    // 3. If no exact match and not wider than max defined (or definedResolutionSettings is empty, or no valid widths found),
+    //    find the closest one among defined resolutions.
     let closestConfig = null;
     let minDifference = Infinity;
 
     if (definedResolutionSettings.length > 0) {
         for (const config of definedResolutionSettings) {
-            const diff = Math.abs(currentWidth - config.width) + Math.abs(currentHeight - config.height);
-            if (diff < minDifference) {
-                minDifference = diff;
-                closestConfig = config;
+            // Ensure config.width and config.height are numbers before calculating diff
+            if (typeof config.width === 'number' && typeof config.height === 'number') {
+                const diff = Math.abs(currentWidth - config.width) + Math.abs(currentHeight - config.height);
+                if (diff < minDifference) {
+                    minDifference = diff;
+                    closestConfig = config;
+                }
             }
         }
 
@@ -178,9 +204,9 @@ function getResponsiveCameraSettings(modelKey) {
         }
     }
 
-    // 3. Ultimate fallback to general mobile/desktop if no defined settings or no closest match found
+    // 4. Ultimate fallback to general mobile/desktop if no specific settings found through above logic
     console.warn(`[Camera] No specific or closest setting found for ${modelKey} at ${currentWidth}x${currentHeight}. Falling back to general perspectives.`);
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 768) { // Standard mobile breakpoint
         return cameraPerspectives.mobile[modelKey] || cameraPerspectives.desktop[modelKey] || cameraPerspectives.desktop.coder;
     }
     return cameraPerspectives.desktop[modelKey] || cameraPerspectives.desktop.coder;
@@ -211,6 +237,11 @@ let aboutBodyAnimationInterval = null; // Dedicated interval for about body text
 let isAboutBodyVisible = false;
 
 let homeFillLight, homeRimLight; // Declare Home-specific lights
+
+// --- Loader Elements and Manager ---
+let loadingOverlay, loaderCircle, loaderPercentageText;
+let initialAssetsLoadingManager;
+// --- End Loader ---
 
 function processOriginalHTMLForCharHighlight(htmlString) {
     let resultHTML = '';
@@ -1106,6 +1137,12 @@ function updateActiveOverlay(newModelKey, onNewOverlayTypedInCallback = null) {
 }
 
 function init() {
+    // --- Get Loader DOM Elements ---
+    loadingOverlay = document.getElementById('loading-overlay');
+    loaderCircle = document.getElementById('loader-circle');
+    loaderPercentageText = document.getElementById('loader-percentage');
+    // --- End Loader DOM Elements ---
+
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
 
@@ -1128,7 +1165,7 @@ function init() {
     effect.setSize(window.innerWidth, window.innerHeight);
     effect.domElement.style.color = '#FFFFFF';
     effect.domElement.style.backgroundColor = 'transparent';
-    effect.domElement.style.paddingLeft = '5vw';
+    effect.domElement.style.paddingLeft = '0';
     document.body.appendChild(effect.domElement);
 
     clock = new THREE.Clock();
@@ -1156,26 +1193,124 @@ function init() {
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/');
     loader.setDRACOLoader(dracoLoader);
 
+    // --- Initialize Loaders and LoadingManager ---
+    initialAssetsLoadingManager = new THREE.LoadingManager();
+
+    initialAssetsLoadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
+        console.log('Initial loading sequence started.');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = 1;
+            loadingOverlay.style.display = 'flex'; // Ensure it's visible and flex for centering
+        }
+
+        // Get reference to ASCII loader element if not already set
+        if (!asciiLoaderContentElement) {
+            asciiLoaderContentElement = document.getElementById('ascii-loader-content');
+        }
+
+        // Initialize ASCII loader
+        if (asciiLoaderContentElement) {
+            asciiSpinnerIndex = 0; // Reset spinner index
+            asciiLoaderContentElement.textContent = `${asciiSpinnerFrames[asciiSpinnerIndex]} Loading... 0%`;
+        }
+    };
+
+    initialAssetsLoadingManager.onLoad = function () {
+        console.log('All initial assets loaded!');
+
+        // Update ASCII loader to 100%
+        if (asciiLoaderContentElement) {
+            asciiLoaderContentElement.textContent = `[OK] Loaded! 100%`;
+        }
+
+        if (loadingOverlay) {
+            // --- PREPARE CAMERA FOR ZOOM START ---
+            // This happens BEFORE the loader fully disappears and a new frame can be rendered
+            // with the model at its final 'coder' position.
+            if (currentModelKey === 'coder') { // Only if we are on the initial 'coder' screen
+                const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
+                const startConfig = initialZoomStartPositions[deviceType]; // Contains .position and .target Vector3s
+                
+                camera.position.copy(startConfig.position);
+                camera.lookAt(startConfig.target); // Look at the target defined in startConfig
+                console.log("[onLoad] Camera position snapped to initial zoom start. Looking at startConfig.target.");
+            }
+            // --- END PREPARE CAMERA ---
+
+            loadingOverlay.style.opacity = 0; // Start fade out
+            loadingOverlay.addEventListener('transitionend', function handleTransitionEnd() {
+                loadingOverlay.removeEventListener('transitionend', handleTransitionEnd); // Clean up
+                loadingOverlay.style.display = 'none';
+                
+                console.log("Loading overlay faded out. Starting initial zoom.");
+                isInitialPageLoadSequence = false; // Mark initial sequence as done
+                if (currentModelKey === 'coder') { // Ensure we are on the coder model
+                   performInitialZoomOutAnimation();
+                }
+                loader.manager = THREE.DefaultLoadingManager; // Reset manager for subsequent loads
+                isInitialLoad = false; // General initial load flag
+            }, { once: true });
+        } else {
+            // Fallback if overlay somehow doesn't exist
+            console.log("Loading overlay not found. Starting initial zoom directly.");
+            // Also prepare camera here if needed for fallback
+            if (currentModelKey === 'coder') {
+                const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
+                const startConfig = initialZoomStartPositions[deviceType];
+                camera.position.copy(startConfig.position);
+                camera.lookAt(startConfig.target);
+                performInitialZoomOutAnimation(); // Call directly as there's no transition
+            }
+            loader.manager = THREE.DefaultLoadingManager;
+            isInitialLoad = false;
+        }
+    };
+
+    initialAssetsLoadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
+        const progress = Math.round((itemsLoaded / itemsTotal) * 100);
+        
+        // Update ASCII loader
+        if (asciiLoaderContentElement) {
+            asciiSpinnerIndex = (asciiSpinnerIndex + 1) % asciiSpinnerFrames.length;
+            asciiLoaderContentElement.textContent = `${asciiSpinnerFrames[asciiSpinnerIndex]} Loading... ${progress}%`;
+        }
+    };
+
+    initialAssetsLoadingManager.onError = function (url) {
+        console.error('There was an error loading ' + url + ' during initial load.');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = 0;
+            loadingOverlay.style.display = 'none'; 
+        }
+        // Allow app to proceed if possible, or show a more permanent error message
+        isInitialPageLoadSequence = false; 
+        loader.manager = THREE.DefaultLoadingManager; // Reset manager
+        isInitialLoad = false;
+        // Optionally, still try to start the rest of the app
+        // if (currentModelKey === 'coder') performInitialZoomOutAnimation(); 
+    };
+
+    // Assign the custom manager for the initial asset loading phase
+    loader.manager = initialAssetsLoadingManager;
+
     // Load the main model (allrounder.glb)
     // currentModelKey is 'coder' by default from its declaration
     loadNewModel(currentModelKey, (success) => {
         if (success) {
-            console.log(`Initial model ${currentModelKey} loaded successfully.`);
-            
-            if (isInitialLoad && currentModelKey === 'coder') {
-                performInitialZoomOutAnimation();
-                isInitialLoad = false;
-            } else {
-                // For non-coder initial load or subsequent loads, ensure controls are enabled if no animation is running
-                if (!isAnimatingCamera) controls.enabled = true;
-            }
-            // Initial visibility for computer model is handled after it loads, based on currentModelKey
+            console.log(`Initial model ${currentModelKey} loaded successfully (managed by LoadingManager).`);
+            // The performInitialZoomOutAnimation() and isInitialLoad = false logic
+            // is now handled by initialAssetsLoadingManager.onLoad callback.
         } else {
             console.error(`Initial model ${currentModelKey} failed to load.`);
+            // Handle failure: maybe hide loader and show error message
+            if (loadingOverlay) {
+                loadingOverlay.style.opacity = 0;
+                loadingOverlay.style.display = 'none';
+            }
         }
     });
 
-    // Load the computer model
+    // Load the computer model - this will also be tracked by initialAssetsLoadingManager
     loader.load(computerModelPath, (gltf) => {
         computerModel = gltf.scene;
         // Apply the same transformations as allrounder.glb
@@ -1401,35 +1536,50 @@ function updateHomeSpecificLighting(isHomeScreen) {
 }
 
 function performInitialZoomOutAnimation() {
-    console.log("Preparing initial zoom-out animation.");
+    console.log("Preparing initial zoom-out animation. Camera should be at start position.");
 
-    // Determine device type to select the correct starting position
     const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
-    const startConfig = initialZoomStartPositions[deviceType];
+    const startConfig = initialZoomStartPositions[deviceType]; // Contains .position and .target
 
-    // The final position and target are assumed to be what camera and controls are currently set to
-    // (which should be the 'coder' perspective as set in init before this function is called).
-    const finalPos = camera.position.clone(); // This is cameraPerspectives.desktop.coder.position or similar
-    const finalTarget = controls.target.clone(); // This is cameraPerspectives.desktop.coder.target or similar
+    // Camera position should already be at startConfig.position due to onLoad logic.
+    // Now, ensure controls.target is also set to startConfig.target.
+    // This is safe because performInitialZoomOutAnimation is called after controls are initialized.
+    if (controls) {
+        controls.target.copy(startConfig.target);
+        // camera.lookAt(controls.target); // Camera should already be looking here from onLoad's camera.lookAt(startConfig.target)
+        controls.update(); 
+        console.log("[ZoomInit] Controls target set to zoom start target.");
+    } else {
+        console.warn("[ZoomInit] Controls not initialized. Cannot set initial controls target.");
+    }
+    
+    // Determine the final destination for the camera and target (the 'coder' perspective)
+    const finalPerspectiveSettings = getResponsiveCameraSettings('coder'); 
+    if (!finalPerspectiveSettings || !finalPerspectiveSettings.position || !finalPerspectiveSettings.target) {
+        console.error("[ZoomInit] Could not get final 'coder' perspective settings. Aborting zoom.");
+        if(controls) controls.enabled = true; // Re-enable controls if something went wrong
+        isAnimatingCamera = false; // Ensure this is reset
+        return;
+    }
+    
+    const currentCamPos = camera.position.clone(); // This is startConfig.position
+    const currentTargetPos = controls ? controls.target.clone() : startConfig.target.clone(); // This is startConfig.target
 
-    // Snap camera to the new defined START position and target
-    camera.position.copy(startConfig.position);
-    controls.target.copy(startConfig.target);
-    camera.lookAt(controls.target);
-    controls.update(); // Reflect immediate change
+    const finalPos = new THREE.Vector3(finalPerspectiveSettings.position.x, finalPerspectiveSettings.position.y, finalPerspectiveSettings.position.z);
+    const finalTarget = new THREE.Vector3(finalPerspectiveSettings.target.x, finalPerspectiveSettings.target.y, finalPerspectiveSettings.target.z);
 
     isAnimatingCamera = true;
-    controls.enabled = false;
+    if(controls) controls.enabled = false;
 
-    // Animate from the new startConfig.position to finalPos
+    // Animate from the current (startConfig) position/target to finalPos/finalTarget
     // And from startConfig.target to finalTarget for controls.target
     new TWEEN.Tween({ 
-        camX: startConfig.position.x,
-        camY: startConfig.position.y,
-        camZ: startConfig.position.z,
-        targetX: startConfig.target.x,
-        targetY: startConfig.target.y,
-        targetZ: startConfig.target.z
+        camX: currentCamPos.x, // Should be startConfig.position.x
+        camY: currentCamPos.y,
+        camZ: currentCamPos.z,
+        targetX: currentTargetPos.x, // Should be startConfig.target.x
+        targetY: currentTargetPos.y,
+        targetZ: currentTargetPos.z
     })
     .to({ 
         camX: finalPos.x,
@@ -1438,31 +1588,39 @@ function performInitialZoomOutAnimation() {
         targetX: finalTarget.x,
         targetY: finalTarget.y,
         targetZ: finalTarget.z
-    }, 3000) // Animate over 3 seconds (adjust as needed)
+    }, 3000) // Animate over 3 seconds
     .easing(TWEEN.Easing.Quadratic.Out)
     .onUpdate((obj) => {
         camera.position.set(obj.camX, obj.camY, obj.camZ);
-        controls.target.set(obj.targetX, obj.targetY, obj.targetZ);
-        camera.lookAt(controls.target);
+        if (controls) controls.target.set(obj.targetX, obj.targetY, obj.targetZ);
+        camera.lookAt(controls ? controls.target : new THREE.Vector3(obj.targetX, obj.targetY, obj.targetZ));
     })
     .onStart(() => {
-        console.log("Starting initial zoom-out animation from custom start.");
+        console.log("Starting initial zoom-out animation from pre-set start position.");
     })
     .onComplete(() => {
         console.log("Initial zoom-out animation complete.");
         isAnimatingCamera = false;
-        controls.enabled = true;
+        if(controls) controls.enabled = true;
+        
         // Ensure camera and target are exactly at the final state
-        camera.position.copy(finalPos); 
-        // controls.target is already correct
-        camera.lookAt(finalTarget);
-        controls.update();
+        camera.position.copy(finalPos);
+        if (controls) {
+            controls.target.copy(finalTarget);
+            controls.update(); // Ensure controls internal state is synced
+        }
+        camera.lookAt(finalTarget); // Final lookAt
+
+        justCompletedTween = true; // For OrbitControls immediate update logic
+
+        // After initial zoom, trigger the 'coder' overlay text animation
+        // And pass the callback to fade in navigation links
         updateActiveOverlay('coder', () => {
-            const mainNav = document.getElementById('navigation-links');
-            if (mainNav) {
-                mainNav.style.opacity = '1';
-                mainNav.style.visibility = 'visible';
-                console.log("Navigation links faded in after 'coder' overlay typed in.");
+            const navLinks = document.getElementById('navigation-links');
+            if (navLinks) {
+                navLinks.style.visibility = 'visible';
+                navLinks.style.opacity = '1';
+                console.log("Navigation links faded in after coder overlay typed in.");
             }
         });
         isAnimatingCamera = false;
