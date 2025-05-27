@@ -24,6 +24,15 @@ body {
     text-align: center;
 }
 
+html, body {
+    overflow-x: hidden; /* Prevent horizontal scroll on main page */
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    position: relative; /* Added for better child positioning context */
+}
+
 #loading-overlay {
     position: fixed;
     top: 0;
@@ -122,13 +131,17 @@ body {
 }
 
 #text-overlays {
-    position: absolute;
+    position: fixed; /* Or absolute, depending on desired scroll behavior with main page */
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
-    z-index: 10;
+    pointer-events: none; /* Allow clicks to pass through to the canvas */
+    z-index: 10; /* Ensure overlays are on top of the 3D scene */
+    display: flex; /* Use flex to help center content if needed */
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden; /* Prevent this container from causing scroll */
 }
 
 .text-overlay-content {
@@ -139,6 +152,19 @@ body {
     padding: 15px;
     border-radius: 5px;
     overflow: auto;
+    display: none; /* Initially hidden by default */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    max-width: 100%; /* Ensure overlay content doesn't exceed viewport width */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    overflow-x: hidden; /* Prevent individual overlays from causing scroll */
+}
+
+.text-overlay-content.active {
+    display: block; /* Show when active */
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Desktop specific positioning */
@@ -180,17 +206,313 @@ body {
 }
 
 .text-overlay-content pre {
-    white-space: pre;
     font-family: 'Courier New', Courier, monospace;
     line-height: 1.1em;
-    font-size: 10px;
     color: #fff;
-    background-color: transparent;
+    background-color: transparent; /* Overlays should have transparent bg for pre */
     padding: 0;
     margin: 0;
     text-align: left;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
     font-weight: bold;
+
+    white-space: pre;    /* Respect all whitespace and newlines in the source ASCII */
+    overflow-x: auto;       /* Add scrollbar to pre if content is still too wide */
+    max-width: 100%;          /* Ensure pre doesn't expand beyond its container */
+    box-sizing: border-box;
+    font-size: 0.5vw; /* Default responsive font size */
+}
+
+/* Responsive adjustments for ASCII art font size in overlays */
+@media (max-width: 1200px) {
+    .text-overlay-content pre {
+        font-size: 1.2vw;
+    }
+}
+
+@media (max-width: 992px) {
+    .text-overlay-content pre {
+        font-size: 1.1vw;
+    }
+}
+
+@media (max-width: 768px) { /* Mobile devices */
+    .text-overlay-content pre {
+        font-size: 2.2vw; 
+    }
+}
+
+@media (max-width: 480px) { /* Very small screens */
+    .text-overlay-content pre {
+        font-size: 10px; /* Fallback to a fixed small size to act as a minimum */
+                      /* Adjust this value as needed for readability */
+    }
+}
+
+/* General Text Styles & Shadows */
+h1, h2, h3, h4, h5, h6,
+.navigation-links a,
+.text-overlay-content > div:not(.subheader-text):not(.about-body-text):not(.calendly-widget-container) p
+{
+    text-shadow: var(--global-heavy-text-shadow);
+}
+
+.text-overlay-content pre,
+.text-overlay-content pre span {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* If you have general p tags directly under body you want to style: */
+body > p {
+    text-shadow: var(--global-heavy-text-shadow);
+}
+
+/* --- Tablet Portrait Specific Styles --- */
+@media (min-width: 768px) and (orientation: portrait) {
+    #contact-overlay {
+        max-width: 75vw;
+    }
+
+    #portfolio-overlay {
+        max-width: calc(100vw - 40px);
+    }
+
+    /* Adjust subheader font size for tablet portrait if needed */
+    .subheader-text p {
+        font-size: 16px;
+    }
+
+    /* Adjust about body text font size for tablet portrait if needed */
+    .about-body-text p {
+        font-size: 14px;
+    }
+}
+
+/* Portfolio Section Grid */
+.portfolio-projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive columns */
+    gap: 20px;
+    padding: 0px;
+    width: 100%;
+    max-width: 1200px; /* Max width for the grid */
+    margin: 20px auto; /* Center the grid */
+    position: relative; /* Ensure it's part of the overlay flow */
+    z-index: 1; /* Keep it above the ASCII art if they overlap vertically */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out; /* Transition for fade out */
+}
+
+.portfolio-project-item {
+    background-color: #0000247a; /* Semi-transparent dark blue */
+    border: 2px dashed #fff; 
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+    text-shadow: var(--global-heavy-text-shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.portfolio-project-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px #FFF;
+}
+
+.project-preview {
+    width: 100%;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    overflow: hidden; /* Ensures content (like images/videos) respects border-radius */
+}
+
+.project-preview img,
+.project-preview video {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 16 / 9; /* Common aspect ratio for previews */
+    object-fit: cover; /* Cover the area, might crop */
+}
+
+.project-info h4 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    color: #FFF;
+    text-shadow: var(--global-heavy-text-shadow);
+}
+
+.project-info p {
+    font-size: 1em;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    flex-grow: 1; /* Allows description to take available space */
+    text-shadow: var(--global-heavy-text-shadow);
+}
+
+.project-link.button-style {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #ffffff; /
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    text-align: center;
+    transition: background-color 0.3s ease;
+    border: 1px solid #00004d;
+    text-shadow: none; /* Override global if needed for buttons */
+}
+
+.project-link.button-style:hover {
+    background-color: #00004d;
+}
+
+/* Ensure portfolio grid is visible when its overlay is active */
+#portfolio-overlay.active .portfolio-projects-grid {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease-in-out 0.75s; /* Increased delay slightly for text to type */
+}
+
+pre {
+    white-space: pre;
+    font-family: 'Courier New', Courier, monospace;
+    line-height: 1em;
+    font-size: 8px;
+    color: #0f0; /* This is for the loader - green text */
+    background-color: #000; /* Black background for loader */
+    padding: 0px;
+    display: inline-block;
+}
+
+/* Portfolio Gallery: Horizontal Scrolling on Small Screens */
+@media (max-width: 767px) {
+    .portfolio-projects-grid {
+        display: flex; /* Change from grid to flex */
+        flex-direction: row; /* Arrange items horizontally */
+        overflow-x: auto;  /* Enable horizontal scrolling */
+        overflow-y: hidden; /* Prevent vertical scrolling */
+        flex-wrap: nowrap;   /* Prevent items from wrapping to new lines */
+        padding-top: 20px;    
+        padding-bottom: 20px; 
+        grid-template-columns: none; /* Remove grid-specific property */
+        gap: 0; /* Remove grid gap, will use margin on items */
+        width: auto; /* Allow it to expand based on content */
+        margin-left: 20px; /* Add some space from the left edge */
+        margin-right: 20px; /* Add some space from the right edge */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        scrollbar-width: thin; /* For Firefox */
+        scrollbar-color: #FFFFFF #00004d; /* Scrollbar colors: thumb track */
+    }
+
+    /* Custom scrollbar for WebKit browsers (Chrome, Safari) */
+    .portfolio-projects-grid::-webkit-scrollbar {
+        height: 8px;
+    }
+    .portfolio-projects-grid::-webkit-scrollbar-track {
+        background: #00004d; /* Track color */
+        border-radius: 4px;
+    }
+    .portfolio-projects-grid::-webkit-scrollbar-thumb {
+        background-color: #FFFFFF; /* Thumb color */
+        border-radius: 4px;
+        border: 2px solid #00004d; /* Optional: border around thumb */
+    }
+
+    .portfolio-project-item {
+        flex: 0 0 auto; /* Prevent items from growing or shrinking, maintain their width */
+        width: 280px;   /* Set a fixed width for items */
+        margin-right: 15px; /* Space between items */
+        max-height: 480px; /* Consistent max height for items */
+        overflow-y: auto; /* Allow internal scroll if content overflows */
+    }
+
+    .portfolio-project-item:last-child {
+        margin-right: 0; /* No margin for the last item to prevent extra space */
+    }
+
+    /* Adjustments for project preview within horizontal scroll */
+    .project-preview {
+        height: 157px; /* Maintain 16:9 aspect ratio for width 280px (280 * 9 / 16 = 157.5) */
+        /* The aspect-ratio property on img/video will still work with object-fit: cover */
+    }
+
+    .project-preview img,
+    .project-preview video {
+        height: 100%; /* Make video/img fill the fixed height of .project-preview */
+        /* width: 100% is already set, object-fit: cover will handle fitting */
+    }
+}
+
+/* Mobile positioning for all overlays */
+@media (max-width: 767px) {
+    .text-overlay-content pre {
+        font-size: 1vw;
+        max-width: 100%;
+        display: inline-block;
+        overflow-x: hidden;
+    }
+
+    .subheader-text {
+        text-align: center;
+    }
+
+    .subheader-text p {
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    /* Mobile positioning for all overlays */
+    #coder-overlay,
+    #about-overlay,
+    #contact-overlay,
+    #portfolio-overlay {
+        position: absolute;
+        width: calc(100% - 20px);
+        max-width: calc(100% - 20px);
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        right: auto;
+        margin-left: 0;
+        max-height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+
+    #about-overlay .text-overlay-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+    }
+
+    #about-overlay .about-body-text {
+        padding-top: 2vw;
+        width: 50vw;
+        max-width: 50vw;
+        margin-left: 0;
+        margin-right: auto;
+        font-size: 15px;
+        padding-left: 0px;
+        padding-right: 15px;
+        box-sizing: border-box;
+    }
+
+    /* Ensure subheader text within specific overlays is centered on mobile */
+    #coder-overlay .subheader-text,
+    #about-overlay .subheader-text,
+    #contact-overlay .subheader-text,
+    #portfolio-overlay .subheader-text {
+        text-align: center;
+        left: 0;
+        right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        transform: none;
+    }
+
 }
 
 .char-bg {
@@ -276,133 +598,31 @@ body {
 }
 
 /* Desktop specific alignments for subheaders */
-#coder-overlay .subheader-text,
-#about-overlay .subheader-text,
-#contact-overlay .subheader-text,
-#portfolio-overlay .subheader-text {
-    text-align: right;
-    left: 0;
-    right: 0;
-    margin-left: auto;
-    margin-right: auto;
-    transform: none;
-}
-
-@media (max-width: 767px) {
-    .text-overlay-content pre {
-        font-size: 1vw;
-        max-width: 100%;
-        display: inline-block;
-        overflow-x: hidden;
-    }
-
-    .subheader-text {
-        text-align: center;
-    }
-
-    .subheader-text p {
-        font-size: 14px;
-        line-height: 1.4;
-    }
-
-    /* Mobile positioning for all overlays */
-    #coder-overlay,
-    #about-overlay,
-    #contact-overlay,
-    #portfolio-overlay {
-        position: absolute;
-        width: calc(100% - 20px);
-        max-width: calc(100% - 20px);
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        text-align: center;
-        right: auto;
-        margin-left: 0;
-        max-height: calc(100vh - 40px);
-        overflow-y: auto;
-    }
-
-    #about-overlay .text-overlay-content {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        height: 100%;
-    }
-
-    #about-overlay .about-body-text {
-        padding-top: 2vw;
-        width: 50vw;
-        max-width: 50vw;
-        margin-left: 0;
-        margin-right: auto;
-        font-size: 15px;
-        padding-left: 0px;
-        padding-right: 15px;
-        box-sizing: border-box;
-    }
-
-    /* Ensure subheader text within specific overlays is centered on mobile */
+@media (min-width: 768px) { /* Apply these styles only on desktop */
     #coder-overlay .subheader-text,
     #about-overlay .subheader-text,
     #contact-overlay .subheader-text,
     #portfolio-overlay .subheader-text {
-        text-align: center;
+        text-align: right;
         left: 0;
         right: 0;
         margin-left: auto;
         margin-right: auto;
         transform: none;
     }
-
 }
 
-pre {
-    white-space: pre;
+/* General styles for navigation links */
+#navigation-links {
+    position: absolute;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px 0;
+    z-index: 100;
     font-family: 'Courier New', Courier, monospace;
-    line-height: 1em;
-    font-size: 8px;
-    color: #0f0;
-    background-color: #000;
-    padding: 0px;
-    display: inline-block;
-}
-
-/* General Text Styles & Shadows */
-h1, h2, h3, h4, h5, h6,
-.navigation-links a,
-.text-overlay-content > div:not(.subheader-text):not(.about-body-text):not(.calendly-widget-container) p
-{
-    text-shadow: var(--global-heavy-text-shadow);
-}
-
-.text-overlay-content pre,
-.text-overlay-content pre span {
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-}
-
-/* If you have general p tags directly under body you want to style: */
-body > p {
-    text-shadow: var(--global-heavy-text-shadow);
-}
-
-/* --- Tablet Portrait Specific Styles --- */
-@media (min-width: 768px) and (orientation: portrait) {
-    #contact-overlay {
-        max-width: 75vw;
-    }
-
-    #portfolio-overlay {
-        max-width: calc(100vw - 40px);
-    }
-
-    /* Adjust subheader font size for tablet portrait if needed */
-    .subheader-text p {
-        font-size: 16px;
-    }
-
-    /* Adjust about body text font size for tablet portrait if needed */
-    .about-body-text p {
-        font-size: 14px;
-    }
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
 }
