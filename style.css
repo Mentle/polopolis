@@ -311,12 +311,12 @@ body {
 
     #about-overlay .about-body-text {
         padding-top: 2vw;
-        width: 100%; /* Take up left 40% of parent's width */
-        max-width: 100%; /* Reinforce width constraint */
+        width: 50vw; /* Take up left 40% of parent's width */
+        max-width: 50vw; /* Reinforce width constraint */
         margin-left: 0; /* Align to the left */
         margin-right: auto; /* Allow it to not take more than 40% */
         font-size: 15px; /* Responsive font size based on viewport width */
-        padding-left: 15px; /* Add left padding */
+        padding-left: 0px; /* Add left padding */
         padding-right: 15px; /* Add right padding */
         box-sizing: border-box; /* Ensure padding is included within the width */
         /* text-align: left; is already set globally for .about-body-text */

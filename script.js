@@ -51,16 +51,16 @@ const definedResolutionSettings = [
         width: 432, height: 874,
         settings: {
             coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-            about: { position: { x: -0.554, y: 1.009, z: 2.304 }, target: { x: -0.522, y: 0.644, z: 0.056 } },
+            about: { position: { x: 0.068, y: 0.839, z: 1.593 }, target: { x: -0.289, y: 0.235, z: 0.166 } },
             portfolio: { position: { x: 3.053, y: -0.199, z: 1.418 }, target: { x: 0.301, y: 0.927, z: 0.013 } },
-            contact: { position: { x: -0.325, y: 0.048, z: 2.433 }, target: { x: -0.263, y: 0.357, z: 0.022 } }
+            contact: { position: { x: 0.121, y: 0.576, z: 0.898 }, target: { x: 0.142, y: 0.681, z: 0.074 } }
         }
     },
     {
         width: 394, height: 794,
         settings: {
             coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-            about: { position: { x: -0.212, y: 1.317, z: 2.732 }, target: { x: -0.534, y: 0.827, z: 0.033 } },
+            about: { position: { x: -0.072, y: 0.771, z: 1.579 }, target: { x: -0.353, y: 0.258, z: 0.072 } },
             portfolio: { position: { x: 2.623, y: -0.319, z: 1.518 }, target: { x: 0.210, y: 0.743, z: 0.029 } },
             contact: { position: { x: -0.789, y: 0.126, z: 2.729 }, target: { x: -0.369, y: 0.558, z: 0.073 } }
         }
@@ -87,7 +87,7 @@ const definedResolutionSettings = [
         width: 915, height: 1792,
         settings: {
             coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } },
-            about: { position: { x: 0.427, y: 1.204, z: 1.049 }, target: { x: -0.232, y: 0.336, z: -0.086 } },
+            about: { position: { x: 0.433, y: 1.010, z: 0.890 }, target: { x: -0.134, y: 0.263, z: -0.087 } },
             portfolio: { position: { x: 2.694, y: -0.445, z: 1.355 }, target: { x: 0.691, y: 0.591, z: 0.269 } },
             contact: { position: { x: 0.433, y: 0.406, z: 1.269 }, target: { x: 0.137, y: 0.196, z: -0.443 } }
         }
@@ -96,7 +96,7 @@ const definedResolutionSettings = [
         width: 1024, height: 1342,
         settings: {
             coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } }, // Assuming mobile coder for consistency, adjust if desktop coder is preferred for larger tablets
-            about: { position: { x: 0.114, y: 0.843, z: 1.504 }, target: { x: -0.456, y: 0.179, z: 0.118 } },
+            about: { position: { x: -0.062, y: 0.855, z: 0.431 }, target: { x: -0.088, y: 0.704, z: -0.024 } },
             portfolio: { position: { x: 2.093, y: -0.621, z: 0.696 }, target: { x: 0.540, y: 0.152, z: 0.099 } },
             contact: { position: { x: 0.047, y: 0.413, z: 0.805 }, target: { x: 0.091, y: 0.493, z: -0.108 } }
         }
@@ -105,7 +105,7 @@ const definedResolutionSettings = [
         width: 800, height: 1236,
         settings: {
             coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } }, // Assuming mobile coder
-            about: { position: { x: 0.393, y: 0.941, z: 1.940 }, target: { x: -0.593, y: 0.334, z: 0.034 } },
+            about: { position: { x: -0.084, y: 0.794, z: 0.524 }, target: { x: -0.073, y: 0.681, z: -0.274 } },
             portfolio: { position: { x: 2.096, y: -0.615, z: 1.088 }, target: { x: 0.513, y: 0.204, z: 0.230 } },
             contact: { position: { x: -0.403, y: -0.134, z: 1.743 }, target: { x: 0.591, y: 0.056, z: -0.320 } }
         }
@@ -114,7 +114,7 @@ const definedResolutionSettings = [
         width: 900, height: 1156,
         settings: {
             coder: { position: { x: -0.178, y: 0.122, z: 0.869 }, target: { x: 0.066, y: -0.282, z: 0.400 } }, // Assuming mobile coder
-            about: { position: { x: 0.243, y: 0.641, z: 1.699 }, target: { x: -0.648, y: 0.147, z: 0.088 } },
+            about: { position: { x: -0.160, y: 0.821, z: 0.390 }, target: { x: -0.136, y: 0.731, z: -0.291 } },
             portfolio: { position: { x: 2.091, y: -0.697, z: 0.371 }, target: { x: 0.493, y: 0.120, z: -0.023 } },
             contact: { position: { x: 0.145, y: 0.294, z: 1.692 }, target: { x: 0.423, y: 0.042, z: -0.210 } }
         }
