@@ -17,6 +17,7 @@ body {
     background-color: #00004d;
     color: #0f0;
     font-family: 'Courier New', Courier, monospace;
+    font-size: 18px; /* Base font size for desktop */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -111,6 +112,10 @@ html, body {
 
 /* Mobile specific styles */
 @media (max-width: 767px) {
+    body {
+        font-size: 16px; /* Base font size for mobile */
+    }
+
     #navigation-links {
         bottom: 10px;
         left: 0;
@@ -395,13 +400,16 @@ pre {
         overflow-x: auto;  /* Enable horizontal scrolling */
         overflow-y: hidden; /* Prevent vertical scrolling */
         flex-wrap: nowrap;   /* Prevent items from wrapping to new lines */
-        padding-top: 20px;    
-        padding-bottom: 20px; 
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding-left: 15px; /* Added padding inside the scroll container */
+        padding-right: 15px; /* Added padding inside the scroll container */
         grid-template-columns: none; /* Remove grid-specific property */
         gap: 0; /* Remove grid gap, will use margin on items */
-        width: auto; /* Allow it to expand based on content */
-        margin-left: 20px; /* Add some space from the left edge */
-        margin-right: 20px; /* Add some space from the right edge */
+        width: 100%; /* Changed from auto to fill parent */
+        margin-left: 0; /* Removed margin */
+        margin-right: 0; /* Removed margin */
+        box-sizing: border-box; /* Ensure padding is included in width */
         -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
         scrollbar-width: thin; /* For Firefox */
         scrollbar-color: #FFFFFF #00004d; /* Scrollbar colors: thumb track */
@@ -470,8 +478,8 @@ pre {
     #contact-overlay,
     #portfolio-overlay {
         position: absolute;
-        width: calc(100% - 20px);
-        max-width: calc(100% - 20px);
+        width: 100%; /* Changed from calc(100% - 20px) */
+        max-width: 100%; /* Changed from calc(100% - 20px) */
         top: 20px;
         left: 50%;
         transform: translateX(-50%);
@@ -480,6 +488,8 @@ pre {
         margin-left: 0;
         max-height: calc(100vh - 70px);
         overflow-y: auto;
+        padding-left: 0; /* Added to remove side padding for full width */
+        padding-right: 0; /* Added to remove side padding for full width */
     }
 
     #about-overlay .text-overlay-content {
@@ -491,12 +501,12 @@ pre {
 
     #about-overlay .about-body-text {
         padding-top: 2vw;
-        width: 50vw;
-        max-width: 50vw;
+        width: 70vw;
+        max-width: 70vw;
         margin-left: 0;
         margin-right: auto;
-        font-size: 15px;
-        padding-left: 0px;
+        font-size: 16px; /* Adjusted for mobile readability */
+        padding-left: 15px;
         padding-right: 15px;
         box-sizing: border-box;
     }

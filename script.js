@@ -128,9 +128,9 @@ const initialModelRotations = {
     portfolio: { x: 0, y: 0, z: 0 }
 };
 
-const asciiCharacters = ' .:-=+*#%@░';
-const asciiResolution =0.20;
-const asciiScale =1;
+const asciiCharacters = ' .:-~=+*#%@█';
+const asciiResolution = 0.2; // User preferred resolution
+const asciiScale = 1;
 const modelRotationSpeed = 0.004; // Will be handled by animation or OrbitControls
 
 const initialZoomStartPositions = {
@@ -1167,7 +1167,7 @@ function init() {
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    effect = new AsciiEffect(renderer, asciiCharacters, { invert: true, resolution: asciiResolution, scale: asciiScale });
+    effect = new AsciiEffect(renderer, asciiCharacters, { invert: true, resolution: asciiResolution, scale: asciiScale, resolutionMatch: false });
     effect.setSize(window.innerWidth, window.innerHeight);
     effect.domElement.style.color = '#FFFFFF';
     effect.domElement.style.backgroundColor = 'transparent';
