@@ -99,5 +99,29 @@ export const portfolioProjects = [
     description: "Landing page for a personalized endurance coaching service helping first-time marathon and triathlon athletes.",
     iframeSrc: "https://gofurther.now",
     link: "https://gofurther.now"
+  },
+  {
+    title: "AIM Partners",
+    description: "Corporate site for a Hong Kong-based wine industry consulting firm — clean, bilingual, built for credibility.",
+    iframeSrc: "https://www.aimpartners.hk/",
+    link: "https://www.aimpartners.hk/"
+  },
+  {
+    title: "Pawfect Shoot",
+    description: "Pet photography booking app — pick your animal, customize the session, and book a package.",
+    iframeSrc: "https://mentle.github.io/PawfectShoot/",
+    link: "https://mentle.github.io/PawfectShoot/"
+  },
+  {
+    title: "Glazey AI",
+    description: "AI-powered assistant that helps potters discover ceramic glaze recipes by describing what they need.",
+    iframeSrc: "https://mentle.github.io/GlazeyAI/",
+    link: "https://mentle.github.io/GlazeyAI/"
+  },
+  {
+    title: "Chattiana",
+    description: "Real-time chat interface — minimal, fast, and built for casual conversation.",
+    iframeSrc: "https://mentle.github.io/chattiana/",
+    link: "https://mentle.github.io/chattiana/"
   }
 ];
